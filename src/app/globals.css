@@ -309,3 +309,20 @@ mark { background: var(--warm-soft); color: var(--fg); border-bottom: 2px solid 
 .meat { display: inline-flex; gap: 3px; }
 .meat-chip { font-family: var(--font-mono), monospace; font-size: 0.72rem; font-weight: 600; width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
 .meat-chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* Code Review Agent: diff viewer */
+.plain-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.diff { font-family: var(--font-mono), Consolas, monospace; font-size: 0.8rem; line-height: 1.5; border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; background: var(--bg); }
+.diff-line { display: grid; grid-template-columns: 3em 1.4em max-content auto; align-items: baseline; min-width: 100%; width: max-content; }
+.diff-line code { font: inherit; white-space: pre; padding-right: 12px; }
+.diff-no { color: var(--muted); text-align: right; padding-right: 8px; user-select: none; }
+.diff-mark { color: var(--muted); user-select: none; }
+.diff-line.add { background: var(--ok-soft); }
+.diff-line.del { background: var(--bad-soft); color: var(--muted); }
+.diff-line.flag-high { box-shadow: inset 3px 0 0 var(--bad); background: var(--bad-soft); }
+.diff-line.flag-medium { box-shadow: inset 3px 0 0 var(--warn); background: var(--warn-soft); }
+.diff-line.flag-low { box-shadow: inset 3px 0 0 var(--muted); }
+.diff-flag { font-size: 0.7rem; font-weight: 700; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; margin-right: 8px; }
+.finding .evidence { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; }
+.finding .evidence code { font-family: var(--font-mono), Consolas, monospace; font-size: 0.8rem; background: var(--sunk); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+details.panel summary { cursor: pointer; font-weight: 700; }

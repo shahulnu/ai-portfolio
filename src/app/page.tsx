@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppCard } from "@/components/AppCard";
-import { APPS, SITE } from "@/lib/site";
+import { APP_GROUPS, APPS, SITE } from "@/lib/site";
 
 export default function Home() {
   return (
@@ -8,19 +8,19 @@ export default function Home() {
       <section className="hero hero-full">
         <span className="eyebrow">{SITE.title}</span>
         <h1>
-          I design AI systems that health plans can <em>actually put into production.</em>
+          I design AI systems that teams can <em>actually put into production.</em>
         </h1>
         <p className="lede">
           {SITE.yearsExperience} years building and architecting software, most recently for a U.S. healthcare payer. This site shows
-          working AI applications for core plan workflows, with the evaluation, citations, human review and PHI handling a
-          regulated environment needs.
+          working AI applications for core health plan workflows and for engineering teams, each with the evaluation,
+          citations, human review and data handling that production needs.
         </p>
         <div className="stats">
           <span>
             <b>{SITE.yearsExperience} yrs</b>software &amp; architecture
           </span>
           <span>
-            <b>{APPS.length}</b>payer AI applications
+            <b>{APPS.length}</b>working AI applications
           </span>
           <span>
             <b>FHIR · X12 · CMS</b>standards I build on
@@ -36,17 +36,19 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-head">
-          <span className="eyebrow">Applications</span>
-          <h2>One app for each core payer workflow</h2>
-        </div>
-        <div className="grid g3">
-          {APPS.map((a) => (
-            <AppCard key={a.slug} app={a} />
-          ))}
-        </div>
-      </section>
+      {APP_GROUPS.map((g) => (
+        <section className="section" key={g.id}>
+          <div className="section-head">
+            <span className="eyebrow">{g.eyebrow}</span>
+            <h2>{g.title}</h2>
+          </div>
+          <div className="grid g3">
+            {APPS.filter((a) => a.group === g.id).map((a) => (
+              <AppCard key={a.slug} app={a} />
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="section">
         <div className="section-head">

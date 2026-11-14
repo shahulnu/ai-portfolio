@@ -1,0 +1,370 @@
+{
+  "caseId": "PR-101",
+  "mode": "replay",
+  "engine": "python",
+  "model": "claude-opus-5-5",
+  "case": {
+    "id": "PR-101",
+    "title": "Add user search endpoint",
+    "author": "dev-ana",
+    "language": "Python (Flask)",
+    "description": "Adds GET /users/search so the admin screen can find users by name.",
+    "teaser": "A new search endpoint that builds its SQL from the query string"
+  },
+  "files": [
+    {
+      "path": "app/routes/users.py",
+      "status": "modified",
+      "lines": [
+        {
+          "kind": "ctx",
+          "text": "from flask import Blueprint, abort, jsonify, request",
+          "oldNo": 1,
+          "newNo": 1
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 2,
+          "newNo": 2
+        },
+        {
+          "kind": "ctx",
+          "text": "from app.db import get_connection",
+          "oldNo": 3,
+          "newNo": 3
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 4,
+          "newNo": 4
+        },
+        {
+          "kind": "ctx",
+          "text": "users = Blueprint(\"users\", __name__)",
+          "oldNo": 5,
+          "newNo": 5
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 6,
+          "newNo": 6
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 7,
+          "newNo": 7
+        },
+        {
+          "kind": "ctx",
+          "text": "@users.get(\"/users/<int:user_id>\")",
+          "oldNo": 8,
+          "newNo": 8
+        },
+        {
+          "kind": "ctx",
+          "text": "def get_user(user_id):",
+          "oldNo": 9,
+          "newNo": 9
+        },
+        {
+          "kind": "ctx",
+          "text": "    conn = get_connection()",
+          "oldNo": 10,
+          "newNo": 10
+        },
+        {
+          "kind": "ctx",
+          "text": "    row = conn.execute(\"SELECT id, name FROM users WHERE id = ?\", (user_id,)).fetchone()",
+          "oldNo": 11,
+          "newNo": 11
+        },
+        {
+          "kind": "ctx",
+          "text": "    if row is None:",
+          "oldNo": 12,
+          "newNo": 12
+        },
+        {
+          "kind": "ctx",
+          "text": "        abort(404)",
+          "oldNo": 13,
+          "newNo": 13
+        },
+        {
+          "kind": "ctx",
+          "text": "    return jsonify(dict(row))",
+          "oldNo": 14,
+          "newNo": 14
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 15
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 16
+        },
+        {
+          "kind": "add",
+          "text": "@users.get(\"/users/search\")",
+          "oldNo": null,
+          "newNo": 17
+        },
+        {
+          "kind": "add",
+          "text": "def search_users():",
+          "oldNo": null,
+          "newNo": 18
+        },
+        {
+          "kind": "add",
+          "text": "    \"\"\"Find users whose name contains the search text.\"\"\"",
+          "oldNo": null,
+          "newNo": 19
+        },
+        {
+          "kind": "add",
+          "text": "    name = request.args.get(\"name\", \"\")",
+          "oldNo": null,
+          "newNo": 20
+        },
+        {
+          "kind": "add",
+          "text": "    conn = get_connection()",
+          "oldNo": null,
+          "newNo": 21
+        },
+        {
+          "kind": "add",
+          "text": "    rows = conn.execute(",
+          "oldNo": null,
+          "newNo": 22
+        },
+        {
+          "kind": "add",
+          "text": "        f\"SELECT id, name FROM users WHERE name LIKE '%{name}%' ORDER BY name\"",
+          "oldNo": null,
+          "newNo": 23
+        },
+        {
+          "kind": "add",
+          "text": "    ).fetchall()",
+          "oldNo": null,
+          "newNo": 24
+        },
+        {
+          "kind": "add",
+          "text": "    return jsonify([dict(r) for r in rows])",
+          "oldNo": null,
+          "newNo": 25
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "reviewer": "correctness",
+      "reason": "1 code file(s) changed."
+    },
+    {
+      "reviewer": "security",
+      "reason": "Added code touches a security-sensitive pattern (\"request.args\")."
+    },
+    {
+      "reviewer": "tests",
+      "reason": "1 source file(s) changed with 0 test file(s) in the diff."
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": "correctness",
+      "notes": "I checked the new search endpoint's query construction, input handling and result serialization for correctness.",
+      "findingCount": 2,
+      "usage": {
+        "inputTokens": 1753,
+        "outputTokens": 580
+      },
+      "ms": 0
+    },
+    {
+      "reviewer": "security",
+      "notes": "Checked the new search endpoint for injection, authorization, and data exposure.",
+      "findingCount": 2,
+      "usage": {
+        "inputTokens": 1753,
+        "outputTokens": 381
+      },
+      "ms": 0
+    },
+    {
+      "reviewer": "tests",
+      "notes": "Checked the new search endpoint for test coverage; no tests were added in the diff.",
+      "findingCount": 1,
+      "usage": {
+        "inputTokens": 1774,
+        "outputTokens": 225
+      },
+      "ms": 0
+    }
+  ],
+  "findings": [
+    {
+      "file": "app/routes/users.py",
+      "line": 23,
+      "quote": "        f\"SELECT id, name FROM users WHERE name LIKE '%{name}%' ORDER BY name\"",
+      "severity": "high",
+      "title": "Search text interpolated directly into SQL",
+      "explanation": "Inserting the search text into the SQL string means a name with an apostrophe (e.g. \"O'Brien\") produces malformed SQL and a 500 error. Crafted input can also change the query.",
+      "suggestion": "Use a parameterized query: `conn.execute(\"SELECT id, name FROM users WHERE name LIKE ? ORDER BY name\", (f\"%{name}%\",))`.",
+      "category": "correctness",
+      "reviewers": [
+        "correctness",
+        "security"
+      ],
+      "lineCorrected": false,
+      "id": "F1"
+    },
+    {
+      "file": "app/routes/users.py",
+      "line": 17,
+      "quote": "@users.get(\"/users/search\")",
+      "severity": "medium",
+      "title": "Admin search endpoint lacks authorization check",
+      "explanation": "The endpoint is described as being for the admin screen, but it has no authentication or admin-role check, so any caller can enumerate users.",
+      "suggestion": "Add the app's admin authorization decorator or check before handling the request.",
+      "category": "security",
+      "reviewers": [
+        "security"
+      ],
+      "lineCorrected": false,
+      "id": "F2"
+    },
+    {
+      "file": "app/routes/users.py",
+      "line": 18,
+      "quote": "def search_users():",
+      "severity": "medium",
+      "title": "New search endpoint has no tests",
+      "explanation": "The PR adds GET /users/search without any tests covering matching behavior, empty name, ordering, or special characters like quotes and % in the query. A regression or the injection-prone string formatting on line 23 would go undetected.",
+      "suggestion": "Add tests for a basic match, no match, an empty name parameter, and input containing a single quote or SQL metacharacters to confirm it is treated as literal text.",
+      "category": "tests",
+      "reviewers": [
+        "tests"
+      ],
+      "lineCorrected": false,
+      "id": "F3"
+    }
+  ],
+  "held": [],
+  "verdict": "request_changes",
+  "verdictReason": "1 high-severity finding(s) should be fixed before merge.",
+  "comment": "Changes requested: 1 high-severity finding(s) should be fixed before merge.\n- [high] app/routes/users.py:23 Search text interpolated directly into SQL. Inserting the search text into the SQL string means a name with an apostrophe (e.g. \"O'Brien\") produces malformed SQL and a 500 error. Crafted input can also change the query. Suggestion: Use a parameterized query: `conn.execute(\"SELECT id, name FROM users WHERE name LIKE ? ORDER BY name\", (f\"%{name}%\",))`.\n- [medium] app/routes/users.py:17 Admin search endpoint lacks authorization check. The endpoint is described as being for the admin screen, but it has no authentication or admin-role check, so any caller can enumerate users. Suggestion: Add the app's admin authorization decorator or check before handling the request.\n- [medium] app/routes/users.py:18 New search endpoint has no tests. The PR adds GET /users/search without any tests covering matching behavior, empty name, ordering, or special characters like quotes and % in the query. A regression or the injection-prone string formatting on line 23 would go undetected. Suggestion: Add tests for a basic match, no match, an empty name parameter, and input containing a single quote or SQL metacharacters to confirm it is treated as literal text.\nSuggested by an automated review. A maintainer makes the merge decision.",
+  "trace": [
+    {
+      "node": "parse_diff",
+      "ms": 0,
+      "detail": "1 file(s), 11 added line(s)"
+    },
+    {
+      "node": "plan_review",
+      "ms": 0,
+      "detail": "Reviewers: correctness, security, tests"
+    },
+    {
+      "node": "review:correctness",
+      "ms": 1,
+      "detail": "2 finding(s). Loaded recorded live output"
+    },
+    {
+      "node": "review:security",
+      "ms": 1,
+      "detail": "2 finding(s). Loaded recorded live output"
+    },
+    {
+      "node": "review:tests",
+      "ms": 1,
+      "detail": "1 finding(s). Loaded recorded live output"
+    },
+    {
+      "node": "verify",
+      "ms": 0,
+      "detail": "5 of 5 quotes found on added lines; 0 held; 0 line number(s) corrected"
+    },
+    {
+      "node": "decide",
+      "ms": 0,
+      "detail": "request_changes"
+    }
+  ],
+  "usage": null,
+  "raw": {
+    "correctness": {
+      "findings": [
+        {
+          "file": "app/routes/users.py",
+          "line": 23,
+          "quote": "        f\"SELECT id, name FROM users WHERE name LIKE '%{name}%' ORDER BY name\"",
+          "severity": "high",
+          "title": "Search text interpolated directly into SQL",
+          "explanation": "Inserting the search text into the SQL string means a name with an apostrophe (e.g. \"O'Brien\") produces malformed SQL and a 500 error. Crafted input can also change the query.",
+          "suggestion": "Use a parameterized query: `conn.execute(\"SELECT id, name FROM users WHERE name LIKE ? ORDER BY name\", (f\"%{name}%\",))`."
+        },
+        {
+          "file": "app/routes/users.py",
+          "line": 23,
+          "quote": "        f\"SELECT id, name FROM users WHERE name LIKE '%{name}%' ORDER BY name\"",
+          "severity": "low",
+          "title": "LIKE wildcards in input are not escaped",
+          "explanation": "A '%' or '_' in the search text acts as a wildcard rather than a literal character. Searches containing them return more users than \"contains the search text\" implies.",
+          "suggestion": "Escape '%', '_' and the escape character in the search text and add an ESCAPE clause to the LIKE."
+        }
+      ],
+      "notes": "I checked the new search endpoint's query construction, input handling and result serialization for correctness."
+    },
+    "security": {
+      "findings": [
+        {
+          "file": "app/routes/users.py",
+          "line": 23,
+          "quote": "f\"SELECT id, name FROM users WHERE name LIKE '%{name}%' ORDER BY name\"",
+          "severity": "high",
+          "title": "SQL injection via name query parameter",
+          "explanation": "User-supplied `name` is interpolated directly into the SQL string, so an attacker can alter the query and read or modify arbitrary data.",
+          "suggestion": "Use a parameterized query: `conn.execute(\"SELECT id, name FROM users WHERE name LIKE ? ORDER BY name\", (f\"%{name}%\",))`."
+        },
+        {
+          "file": "app/routes/users.py",
+          "line": 17,
+          "quote": "@users.get(\"/users/search\")",
+          "severity": "medium",
+          "title": "Admin search endpoint lacks authorization check",
+          "explanation": "The endpoint is described as being for the admin screen, but it has no authentication or admin-role check, so any caller can enumerate users.",
+          "suggestion": "Add the app's admin authorization decorator or check before handling the request."
+        }
+      ],
+      "notes": "Checked the new search endpoint for injection, authorization, and data exposure."
+    },
+    "tests": {
+      "findings": [
+        {
+          "file": "app/routes/users.py",
+          "line": 18,
+          "quote": "def search_users():",
+          "severity": "medium",
+          "title": "New search endpoint has no tests",
+          "explanation": "The PR adds GET /users/search without any tests covering matching behavior, empty name, ordering, or special characters like quotes and % in the query. A regression or the injection-prone string formatting on line 23 would go undetected.",
+          "suggestion": "Add tests for a basic match, no match, an empty name parameter, and input containing a single quote or SQL metacharacters to confirm it is treated as literal text."
+        }
+      ],
+      "notes": "Checked the new search endpoint for test coverage; no tests were added in the diff."
+    }
+  }
+}

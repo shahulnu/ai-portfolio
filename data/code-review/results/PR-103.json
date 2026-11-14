@@ -1,0 +1,516 @@
+{
+  "caseId": "PR-103",
+  "mode": "replay",
+  "engine": "python",
+  "model": "claude-opus-5-5",
+  "case": {
+    "id": "PR-103",
+    "title": "Exponential backoff for retries",
+    "author": "dev-mei",
+    "language": "Python",
+    "description": "Renames retry() to with_retries(), adds exponential backoff and input validation, and adds tests.",
+    "teaser": "A clean refactor with good tests: the false-positive check"
+  },
+  "files": [
+    {
+      "path": "app/utils/retry.py",
+      "status": "modified",
+      "lines": [
+        {
+          "kind": "ctx",
+          "text": "import time",
+          "oldNo": 1,
+          "newNo": 1
+        },
+        {
+          "kind": "ctx",
+          "text": "from typing import Callable, TypeVar",
+          "oldNo": 2,
+          "newNo": 2
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 3,
+          "newNo": 3
+        },
+        {
+          "kind": "ctx",
+          "text": "T = TypeVar(\"T\")",
+          "oldNo": 4,
+          "newNo": 4
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 5,
+          "newNo": 5
+        },
+        {
+          "kind": "ctx",
+          "text": "",
+          "oldNo": 6,
+          "newNo": 6
+        },
+        {
+          "kind": "del",
+          "text": "def retry(fn: Callable[[], T], attempts: int = 3, delay: float = 0.5) -> T:",
+          "oldNo": 7,
+          "newNo": null
+        },
+        {
+          "kind": "del",
+          "text": "    for i in range(attempts):",
+          "oldNo": 8,
+          "newNo": null
+        },
+        {
+          "kind": "add",
+          "text": "def with_retries(fn: Callable[[], T], attempts: int = 3, base_delay: float = 0.5) -> T:",
+          "oldNo": null,
+          "newNo": 7
+        },
+        {
+          "kind": "add",
+          "text": "    \"\"\"Call fn, retrying on ConnectionError with exponential backoff.",
+          "oldNo": null,
+          "newNo": 8
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 9
+        },
+        {
+          "kind": "add",
+          "text": "    Waits base_delay, then 2 x base_delay, and so on between attempts.",
+          "oldNo": null,
+          "newNo": 10
+        },
+        {
+          "kind": "add",
+          "text": "    Re-raises the last error once all attempts fail.",
+          "oldNo": null,
+          "newNo": 11
+        },
+        {
+          "kind": "add",
+          "text": "    \"\"\"",
+          "oldNo": null,
+          "newNo": 12
+        },
+        {
+          "kind": "add",
+          "text": "    if attempts < 1:",
+          "oldNo": null,
+          "newNo": 13
+        },
+        {
+          "kind": "add",
+          "text": "        raise ValueError(\"attempts must be at least 1\")",
+          "oldNo": null,
+          "newNo": 14
+        },
+        {
+          "kind": "add",
+          "text": "    for attempt in range(attempts):",
+          "oldNo": null,
+          "newNo": 15
+        },
+        {
+          "kind": "ctx",
+          "text": "        try:",
+          "oldNo": 9,
+          "newNo": 16
+        },
+        {
+          "kind": "ctx",
+          "text": "            return fn()",
+          "oldNo": 10,
+          "newNo": 17
+        },
+        {
+          "kind": "ctx",
+          "text": "        except ConnectionError:",
+          "oldNo": 11,
+          "newNo": 18
+        },
+        {
+          "kind": "del",
+          "text": "            if i == attempts - 1:",
+          "oldNo": 12,
+          "newNo": null
+        },
+        {
+          "kind": "add",
+          "text": "            if attempt == attempts - 1:",
+          "oldNo": null,
+          "newNo": 19
+        },
+        {
+          "kind": "ctx",
+          "text": "                raise",
+          "oldNo": 13,
+          "newNo": 20
+        },
+        {
+          "kind": "del",
+          "text": "            time.sleep(delay)",
+          "oldNo": 14,
+          "newNo": null
+        },
+        {
+          "kind": "add",
+          "text": "            time.sleep(base_delay * (2**attempt))",
+          "oldNo": null,
+          "newNo": 21
+        },
+        {
+          "kind": "ctx",
+          "text": "    raise AssertionError(\"unreachable\")",
+          "oldNo": 15,
+          "newNo": 22
+        }
+      ]
+    },
+    {
+      "path": "tests/test_retry.py",
+      "status": "added",
+      "lines": [
+        {
+          "kind": "add",
+          "text": "import pytest",
+          "oldNo": null,
+          "newNo": 1
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 2
+        },
+        {
+          "kind": "add",
+          "text": "from app.utils import retry as retry_module",
+          "oldNo": null,
+          "newNo": 3
+        },
+        {
+          "kind": "add",
+          "text": "from app.utils.retry import with_retries",
+          "oldNo": null,
+          "newNo": 4
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 5
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 6
+        },
+        {
+          "kind": "add",
+          "text": "@pytest.fixture(autouse=True)",
+          "oldNo": null,
+          "newNo": 7
+        },
+        {
+          "kind": "add",
+          "text": "def no_sleep(monkeypatch):",
+          "oldNo": null,
+          "newNo": 8
+        },
+        {
+          "kind": "add",
+          "text": "    delays = []",
+          "oldNo": null,
+          "newNo": 9
+        },
+        {
+          "kind": "add",
+          "text": "    monkeypatch.setattr(retry_module.time, \"sleep\", delays.append)",
+          "oldNo": null,
+          "newNo": 10
+        },
+        {
+          "kind": "add",
+          "text": "    return delays",
+          "oldNo": null,
+          "newNo": 11
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 12
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 13
+        },
+        {
+          "kind": "add",
+          "text": "def test_returns_first_success():",
+          "oldNo": null,
+          "newNo": 14
+        },
+        {
+          "kind": "add",
+          "text": "    assert with_retries(lambda: 42) == 42",
+          "oldNo": null,
+          "newNo": 15
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 16
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 17
+        },
+        {
+          "kind": "add",
+          "text": "def test_retries_then_succeeds(no_sleep):",
+          "oldNo": null,
+          "newNo": 18
+        },
+        {
+          "kind": "add",
+          "text": "    calls = iter([ConnectionError(), ConnectionError(), \"ok\"])",
+          "oldNo": null,
+          "newNo": 19
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 20
+        },
+        {
+          "kind": "add",
+          "text": "    def fn():",
+          "oldNo": null,
+          "newNo": 21
+        },
+        {
+          "kind": "add",
+          "text": "        result = next(calls)",
+          "oldNo": null,
+          "newNo": 22
+        },
+        {
+          "kind": "add",
+          "text": "        if isinstance(result, Exception):",
+          "oldNo": null,
+          "newNo": 23
+        },
+        {
+          "kind": "add",
+          "text": "            raise result",
+          "oldNo": null,
+          "newNo": 24
+        },
+        {
+          "kind": "add",
+          "text": "        return result",
+          "oldNo": null,
+          "newNo": 25
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 26
+        },
+        {
+          "kind": "add",
+          "text": "    assert with_retries(fn, attempts=3, base_delay=1) == \"ok\"",
+          "oldNo": null,
+          "newNo": 27
+        },
+        {
+          "kind": "add",
+          "text": "    assert no_sleep == [1, 2]",
+          "oldNo": null,
+          "newNo": 28
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 29
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 30
+        },
+        {
+          "kind": "add",
+          "text": "def test_reraises_after_last_attempt(no_sleep):",
+          "oldNo": null,
+          "newNo": 31
+        },
+        {
+          "kind": "add",
+          "text": "    def fn():",
+          "oldNo": null,
+          "newNo": 32
+        },
+        {
+          "kind": "add",
+          "text": "        raise ConnectionError(\"down\")",
+          "oldNo": null,
+          "newNo": 33
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 34
+        },
+        {
+          "kind": "add",
+          "text": "    with pytest.raises(ConnectionError):",
+          "oldNo": null,
+          "newNo": 35
+        },
+        {
+          "kind": "add",
+          "text": "        with_retries(fn, attempts=2, base_delay=1)",
+          "oldNo": null,
+          "newNo": 36
+        },
+        {
+          "kind": "add",
+          "text": "    assert no_sleep == [1]",
+          "oldNo": null,
+          "newNo": 37
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 38
+        },
+        {
+          "kind": "add",
+          "text": "",
+          "oldNo": null,
+          "newNo": 39
+        },
+        {
+          "kind": "add",
+          "text": "def test_rejects_zero_attempts():",
+          "oldNo": null,
+          "newNo": 40
+        },
+        {
+          "kind": "add",
+          "text": "    with pytest.raises(ValueError):",
+          "oldNo": null,
+          "newNo": 41
+        },
+        {
+          "kind": "add",
+          "text": "        with_retries(lambda: 1, attempts=0)",
+          "oldNo": null,
+          "newNo": 42
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "reviewer": "correctness",
+      "reason": "2 code file(s) changed."
+    },
+    {
+      "reviewer": "tests",
+      "reason": "1 source file(s) changed with 1 test file(s) in the diff."
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": "correctness",
+      "notes": "I checked the backoff math (base_delay * 2**attempt gives 0.5, 1.0, \u2026, matching the docstring), the last-attempt re-raise condition, the attempts<1 validation, and that the tests' expected sleep lists [1, 2] and [1] match the implementation; I found no correctness issues.",
+      "findingCount": 0,
+      "usage": {
+        "inputTokens": 2485,
+        "outputTokens": 117
+      },
+      "ms": 0
+    },
+    {
+      "reviewer": "tests",
+      "notes": "I checked the new tests against the renamed with_retries function and found no gaps worth reporting: they cover first-try success, the exponential backoff sequence ([1, 2]), re-raising after the last attempt, and rejecting zero attempts, and patching time.sleep correctly isolates the delays.",
+      "findingCount": 0,
+      "usage": {
+        "inputTokens": 2506,
+        "outputTokens": 325
+      },
+      "ms": 0
+    }
+  ],
+  "findings": [],
+  "held": [],
+  "verdict": "approve",
+  "verdictReason": "No verified findings.",
+  "comment": "Looks good: No verified findings.\nSuggested by an automated review. A maintainer makes the merge decision.",
+  "trace": [
+    {
+      "node": "parse_diff",
+      "ms": 0,
+      "detail": "2 file(s), 53 added line(s)"
+    },
+    {
+      "node": "plan_review",
+      "ms": 0,
+      "detail": "Reviewers: correctness, tests"
+    },
+    {
+      "node": "review:correctness",
+      "ms": 0,
+      "detail": "0 finding(s). Loaded recorded live output"
+    },
+    {
+      "node": "review:tests",
+      "ms": 1,
+      "detail": "0 finding(s). Loaded recorded live output"
+    },
+    {
+      "node": "verify",
+      "ms": 0,
+      "detail": "0 of 0 quotes found on added lines; 0 held; 0 line number(s) corrected"
+    },
+    {
+      "node": "decide",
+      "ms": 0,
+      "detail": "approve"
+    }
+  ],
+  "usage": null,
+  "raw": {
+    "correctness": {
+      "findings": [],
+      "notes": "I checked the backoff math (base_delay * 2**attempt gives 0.5, 1.0, \u2026, matching the docstring), the last-attempt re-raise condition, the attempts<1 validation, and that the tests' expected sleep lists [1, 2] and [1] match the implementation; I found no correctness issues."
+    },
+    "tests": {
+      "findings": [],
+      "notes": "I checked the new tests against the renamed with_retries function and found no gaps worth reporting: they cover first-try success, the exponential backoff sequence ([1, 2]), re-raising after the last attempt, and rejecting zero attempts, and patching time.sleep correctly isolates the delays."
+    }
+  }
+}

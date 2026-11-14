@@ -42,6 +42,12 @@ Domain notes: PA follows a fixed workflow with CMS-0057-F decision deadlines. Ap
 - After changing data or re-recording, with the dev server running: `npm run contracts:sync` (regenerates the golden files and copies `data/` and `contract-tests/` to the services project), then run `mvn test` there.
 - Any change to an engine's output shape must be made in both languages.
 
+## Developer tools demos (`../langgraph-dev-agents`, Python)
+- Apps are grouped in `src/lib/site.ts` (`group: "payer" | "developer"`, `APP_GROUPS`); Home and Apps render one section per group.
+- Code Review Agent (`/apps/code-review-agent`): the engine is a Python LangGraph + LangChain FastAPI service in `../langgraph-dev-agents` (port 8090). This site has no TypeScript engine for it.
+- Replay serves `data/code-review/results/*.json`, exported by `uv run python scripts/export_site.py` in that repo, so Vercel needs no Python host. Setting `CODE_REVIEW_ENGINE_URL` forwards to the service for live runs.
+- Source links for Python demos come from `PYTHON_CODE_PATHS` in `site.ts`.
+
 ## Standing rules from the owner
 - The public site (Vercel) runs **key-off**: no `ANTHROPIC_API_KEY` there, so it's replay only.
 - **Don't commit or push to git until asked.**
