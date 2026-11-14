@@ -53,20 +53,29 @@ export default function Home() {
       <section className="section">
         <div className="section-head">
           <span className="eyebrow">How they are built</span>
-          <h2>Same platform, same safeguards</h2>
+          <h2>Different problems, same safeguards</h2>
         </div>
         <div className="grid g3">
           <div className="panel">
             <h3>Model output is checked in code</h3>
-            <p className="muted">Every quote the model cites is matched against the source record. Routing rules live in code, not in the prompt.</p>
+            <p className="muted">
+              Every quote, field reading and citation is checked against its source before anyone sees it. Routes and verdicts
+              are set by code, not the prompt.
+            </p>
           </div>
           <div className="panel">
-            <h3>People make coverage decisions</h3>
-            <p className="muted">The AI recommends and routes. It never issues a denial; adverse determinations stay with clinicians.</p>
+            <h3>People make the decisions</h3>
+            <p className="muted">
+              The AI recommends and routes. It never issues a denial, agents only get read tools, and nothing is written to a
+              system of record until a person approves.
+            </p>
           </div>
           <div className="panel">
             <h3>Measured against labeled cases</h3>
-            <p className="muted">Each app ships with a labeled test set and an eval script, so accuracy claims come with a number and a method.</p>
+            <p className="muted">
+              Each app ships with a labeled test set and an eval script, so accuracy claims come with a number and a method.
+              When a check fails, the prompt is fixed, never the check.
+            </p>
           </div>
         </div>
         <p>
