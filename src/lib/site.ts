@@ -31,6 +31,7 @@ export const CODE_PATHS: Record<string, { engine: string; java: string }> = {
 /** Demos whose engine is a Python LangGraph service, by app slug: which repo, and where in it. */
 export const PYTHON_CODE_PATHS: Record<string, { repo: "devAgents" | "payerAgents"; package: string; data: string; api: string; extra?: { label: string; path: string } }> = {
   "code-review-agent": { repo: "devAgents", package: "app/code_review", data: "data/code-review", api: "code-review" },
+  "incident-debugger": { repo: "devAgents", package: "app/incident", data: "data/incident", api: "incident", extra: { label: "Synthetic checkout service, v1.4.1 and v1.4.2", path: "data/incident/service" } },
   "fax-intake-agent": { repo: "payerAgents", package: "app/fax_intake", data: "data/fax-intake", api: "fax-intake", extra: { label: "MCP server", path: "app/payer_mcp" } },
 };
 
@@ -110,6 +111,15 @@ export const APPS: AppEntry[] = [
     area: "Code review",
     technique: "LangGraph parallel reviewers with verified findings",
     blurb: "Reviews a pull request with parallel correctness, security and test reviewers in LangGraph, keeps only findings whose quoted code is in the diff, and suggests a verdict.",
+    status: "live",
+    group: "developer",
+  },
+  {
+    slug: "incident-debugger",
+    name: "Incident Debugger",
+    area: "Incident response",
+    technique: "Orchestrator with specialist agents, proven by a test",
+    blurb: "A lead agent delegates to log, metrics, change, code and reproduction specialists, then confirms the root cause only when a test fails on the deployed version and passes on the one before.",
     status: "live",
     group: "developer",
   },

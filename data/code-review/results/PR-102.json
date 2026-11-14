@@ -336,7 +336,7 @@
     },
     {
       "node": "review:correctness",
-      "ms": 1,
+      "ms": 0,
       "detail": "3 finding(s). Loaded recorded live output"
     },
     {

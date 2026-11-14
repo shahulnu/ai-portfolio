@@ -1,0 +1,416 @@
+{
+ "incidentId": "INC-202",
+ "mode": "replay",
+ "engine": "python",
+ "model": "claude-opus-5-5",
+ "incident": {
+  "id": "INC-202",
+  "title": "Average order value dropped",
+  "teaser": "No errors at all, but customers are paying less than they should",
+  "opened": "2026-11-12T15:05:00Z",
+  "description": "Finance dashboard: average order value down about 10% since early afternoon. No error alerts fired. The v1.4.2 deploy went out at 14:10 UTC."
+ },
+ "steps": [
+  {
+   "n": 1,
+   "reasoning": "AOV dropped ~10% with no errors, possibly coinciding with the 14:10 deploy; first confirm timing of the drop relative to the deploy.",
+   "action": "delegate",
+   "specialist": "metrics_analyst",
+   "task": "When exactly did average order value (and related metrics like order totals, discount amounts, tax, item counts, order volume) start changing on 2026-11-12? Does the change line up with the v1.4.2 deploy at 14:10 UTC or start earlier? Note any other deploys or config changes around that time.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 2,
+   "reasoning": "The AOV drop lines up with the deploy, and support notes report coupons applying double their discount, so a coupon-discount bug in v1.4.2 is likely. Next, find which commit changed discount logic.",
+   "action": "delegate",
+   "specialist": "change_investigator",
+   "task": "Review commits a41c9e2, 7d03b5f, c92e1aa in v1.4.2 for any change to coupon/discount calculation or application (e.g., discount applied twice, percentage doubled, applied both per-item and per-order). Cite the commit and the file/line of the suspicious change.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 3,
+   "reasoning": "Commit 7d03b5f's compute_total appears to subtract each percent coupon twice (pricing.py lines 11 and 15\u201316), and the timing and support notes match. A reproducer test is needed to prove that v1.4.2 introduced the bug before concluding.",
+   "action": "delegate",
+   "specialist": "reproducer",
+   "task": "Write a pytest test for checkout/pricing.py compute_total. Use a cart with subtotal 100.00 and a single 10% percent coupon (in the coupon dict format compute_total expects), and assert the result reflects exactly a 10% discount (90.00 before any tax/shipping the function adds; compare against the no-coupon total minus 10% of subtotal). The test should fail on v1.4.2, where the discount comes out to 20%, and pass on v1.4.1.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 4,
+   "reasoning": "Repro proves commit 7d03b5f in v1.4.2 double-applies percent coupons, and the faulty lines are cited (checkout/pricing.py:15-16@v1.4.2, plus the per-coupon subtraction at line 11). The timing matches the deploy, so the cause is proven.",
+   "action": "conclude",
+   "specialist": null,
+   "task": "",
+   "ms": 0,
+   "by": "orchestrator"
+  }
+ ],
+ "findings": [
+  {
+   "specialist": "metrics_analyst",
+   "task": "When exactly did average order value (and related metrics like order totals, discount amounts, tax, item counts, order volume) start changing on 2026-11-12? Does the change line up with the v1.4.2 deploy at 14:10 UTC or start earlier? Note any other deploys or config changes around that time.",
+   "calls": [
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "list"
+     },
+     "result": "Unknown metric. Available: error_rate_pct, orders_per_min, avg_order_value_usd, coupon_redemptions_per_min"
+    },
+    {
+     "tool": "get_deploys",
+     "args": {},
+     "result": "- v1.4.1 deployed 2026-11-05T15:30:00Z; commits: n/a\n- v1.4.2 deployed 2026-11-12T14:10:00Z; commits: a41c9e2, 7d03b5f, c92e1aa"
+    },
+    {
+     "tool": "get_notes",
+     "args": {},
+     "result": "N1 2026-11-12T14:37:00Z [support] Customer says their 10% welcome coupon took 20% off. Happy customer, but flagging it.\nN2 2026-11-12T14:52:00Z [support] Another order shows double the coupon discount on the receipt."
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "avg_order_value_usd"
+     },
+     "result": "avg_order_value_usd, 10-minute averages:\n- 13:30\u201313:39 UTC: 73.95\n- 13:40\u201313:49 UTC: 74.04\n- 13:50\u201313:59 UTC: 74.20\n- 14:00\u201314:09 UTC: 74.25\n- 14:10\u201314:19 UTC: 71.34\n- 14:20\u201314:29 UTC: 71.75\n- 14:30\u201314:39 UTC: 71.27\n- 14:40\u201314:49 UTC: 71.53\n- 14:50\u201314:59 UTC: 71.82"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "orders_per_min"
+     },
+     "result": "orders_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 19.97\n- 13:40\u201313:49 UTC: 20.22\n- 13:50\u201313:59 UTC: 19.98\n- 14:00\u201314:09 UTC: 19.32\n- 14:10\u201314:19 UTC: 20.14\n- 14:20\u201314:29 UTC: 19.97\n- 14:30\u201314:39 UTC: 20.54\n- 14:40\u201314:49 UTC: 19.80\n- 14:50\u201314:59 UTC: 19.84"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "coupon_redemptions_per_min"
+     },
+     "result": "coupon_redemptions_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 4.64\n- 13:40\u201313:49 UTC: 4.86\n- 13:50\u201313:59 UTC: 5.06\n- 14:00\u201314:09 UTC: 5.20\n- 14:10\u201314:19 UTC: 5.33\n- 14:20\u201314:29 UTC: 4.93\n- 14:30\u201314:39 UTC: 4.95\n- 14:40\u201314:49 UTC: 5.21\n- 14:50\u201314:59 UTC: 4.89"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "error_rate_pct"
+     },
+     "result": "error_rate_pct, 10-minute averages:\n- 13:30\u201313:39 UTC: 0.20\n- 13:40\u201313:49 UTC: 0.21\n- 13:50\u201313:59 UTC: 0.23\n- 14:00\u201314:09 UTC: 0.17\n- 14:10\u201314:19 UTC: 0.23\n- 14:20\u201314:29 UTC: 0.20\n- 14:30\u201314:39 UTC: 0.20\n- 14:40\u201314:49 UTC: 0.19\n- 14:50\u201314:59 UTC: 0.19"
+    }
+   ],
+   "submitted": {
+    "summary": "Average order value stepped down in the 14:10\u201314:19 UTC bucket, the same bucket as the v1.4.2 deploy (14:10). It went from 74.25 to 71.34, about 3.9% lower, and stayed at 71.3\u201371.8 afterwards. Before that it was flat to slightly rising (73.95\u201374.25), so nothing points to an earlier start. Order volume, coupon redemptions and error rate show no change at the deploy. The pattern fits coupons being over-discounted, as in support notes N1 and N2 (\"10% coupon took 20% off\"), rather than lost orders or failures. Two caveats: the drop I measured is about 4%, not the ~10% on the finance dashboard, and I had no metrics for order totals, discount amount, tax or item counts.",
+    "evidence": [
+     {
+      "ref": "metric:avg_order_value_usd",
+      "detail": "About 74.0\u201374.25 from 13:30 to 14:09, then 71.34 at 14:10\u201314:19 and 71.27\u201371.82 through 14:59: a one-step drop of about 3.9% starting in the deploy bucket."
+     },
+     {
+      "ref": "deploy:v1.4.2",
+      "detail": "Deployed at 14:10:00Z (commits a41c9e2, 7d03b5f, c92e1aa); the only other deploy is v1.4.1 on 2026-11-05, and no config changes are recorded."
+     },
+     {
+      "ref": "metric:orders_per_min",
+      "detail": "Flat at about 19.3\u201320.5 before and after 14:10, so order volume did not change."
+     },
+     {
+      "ref": "metric:coupon_redemptions_per_min",
+      "detail": "Steady at about 4.6\u20135.3; coupon use did not jump, so the drop is not from more coupons being used."
+     },
+     {
+      "ref": "metric:error_rate_pct",
+      "detail": "Steady at 0.17\u20130.23%, which matches no error alerts firing."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "14:37 support report: a 10% welcome coupon took 20% off, after the deploy."
+     },
+     {
+      "ref": "note:N2",
+      "detail": "14:52 support report: a receipt showed double the coupon discount."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "Average order value stepped down in the 14:10\u201314:19 UTC bucket, the same bucket as the v1.4.2 deploy (14:10). It went from 74.25 to 71.34, about 3.9% lower, and stayed at 71.3\u201371.8 afterwards. Before that it was flat to slightly rising (73.95\u201374.25), so nothing points to an earlier start. Order volume, coupon redemptions and error rate show no change at the deploy. The pattern fits coupons being over-discounted, as in support notes N1 and N2 (\"10% coupon took 20% off\"), rather than lost orders or failures. Two caveats: the drop I measured is about 4%, not the ~10% on the finance dashboard, and I had no metrics for order totals, discount amount, tax or item counts.",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "metric:avg_order_value_usd",
+     "detail": "About 74.0\u201374.25 from 13:30 to 14:09, then 71.34 at 14:10\u201314:19 and 71.27\u201371.82 through 14:59: a one-step drop of about 3.9% starting in the deploy bucket.",
+     "verified": true
+    },
+    {
+     "ref": "deploy:v1.4.2",
+     "detail": "Deployed at 14:10:00Z (commits a41c9e2, 7d03b5f, c92e1aa); the only other deploy is v1.4.1 on 2026-11-05, and no config changes are recorded.",
+     "verified": true
+    },
+    {
+     "ref": "metric:orders_per_min",
+     "detail": "Flat at about 19.3\u201320.5 before and after 14:10, so order volume did not change.",
+     "verified": true
+    },
+    {
+     "ref": "metric:coupon_redemptions_per_min",
+     "detail": "Steady at about 4.6\u20135.3; coupon use did not jump, so the drop is not from more coupons being used.",
+     "verified": true
+    },
+    {
+     "ref": "metric:error_rate_pct",
+     "detail": "Steady at 0.17\u20130.23%, which matches no error alerts firing.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "14:37 support report: a 10% welcome coupon took 20% off, after the deploy.",
+     "verified": true
+    },
+    {
+     "ref": "note:N2",
+     "detail": "14:52 support report: a receipt showed double the coupon discount.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "change_investigator",
+   "task": "Review commits a41c9e2, 7d03b5f, c92e1aa in v1.4.2 for any change to coupon/discount calculation or application (e.g., discount applied twice, percentage doubled, applied both per-item and per-order). Cite the commit and the file/line of the suspicious change.",
+   "calls": [
+    {
+     "tool": "list_commits",
+     "args": {},
+     "result": "a41c9e2 2026-11-12T11:05:00Z dev-lee: Rename shipping_address to shipping in the cart schema (files: checkout/cart.py, checkout/orders.py)\n7d03b5f 2026-11-12T12:40:00Z dev-sam: Allow stacking a percent coupon with a fixed coupon (files: checkout/pricing.py)\nc92e1aa 2026-11-12T13:20:00Z dev-kim: Switch service logs to JSON format (files: checkout/logging_config.py)"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "a41c9e2"
+     },
+     "result": "commit a41c9e2 Rename shipping_address to shipping in the cart schema\n--- a/checkout/cart.py\n+++ b/checkout/cart.py\n@@ -2,8 +2,8 @@\n \n \n-def make_cart(items: list[dict], shipping_address: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n+def make_cart(items: list[dict], shipping: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n     return {\n         \"items\": items,\n-        \"shipping_address\": shipping_address,\n+        \"shipping\": shipping,\n         \"gift\": gift,\n         \"gift_message\": gift_message,\n--- a/checkout/orders.py\n+++ b/checkout/orders.py\n@@ -8,5 +8,5 @@\n         \"id\": order_id,\n         \"items\": cart[\"items\"],\n-        \"ship_to\": cart[\"shipping_address\"],\n+        \"ship_to\": cart[\"shipping\"],\n         \"total\": compute_total(cart[\"items\"], coupons),\n     }"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "7d03b5f"
+     },
+     "result": "commit 7d03b5f Allow stacking a percent coupon with a fixed coupon\n--- a/checkout/pricing.py\n+++ b/checkout/pricing.py\n@@ -3,13 +3,15 @@\n \n def compute_total(items: list[dict], coupons: list[dict]) -> float:\n-    \"\"\"Subtotal minus at most one coupon. A percent coupon takes value% off the subtotal;\n-    a fixed coupon takes value dollars off.\"\"\"\n+    \"\"\"Subtotal minus every coupon. A percent coupon takes value% off the subtotal;\n+    a fixed coupon takes value dollars off. Coupons can now be stacked.\"\"\"\n     subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n     total = subtotal\n-    if coupons:\n-        c = coupons[0]\n+    for c in coupons:\n         if c[\"kind\"] == \"percent\":\n             total -= subtotal * c[\"value\"] / 100\n         elif c[\"kind\"] == \"fixed\":\n             total -= c[\"value\"]\n+    # Percent coupons apply to the subtotal, not to an already-discounted total.\n+    percent = sum(c[\"value\"] for c in coupons if c[\"kind\"] == \"percent\")\n+    total -= subtotal * percent / 100\n     return round(max(total, 0), 2)"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "c92e1aa"
+     },
+     "result": "commit c92e1aa Switch service logs to JSON format\n--- a/checkout/logging_config.py\n+++ b/checkout/logging_config.py\n@@ -1,3 +1,3 @@\n \"\"\"Log format for the checkout service.\"\"\"\n \n-LOG_FORMAT = \"%(asctime)s %(levelname)s %(name)s %(message)s\"\n+LOG_FORMAT = '{\"ts\": \"%(asctime)s\", \"level\": \"%(levelname)s\", \"logger\": \"%(name)s\", \"msg\": \"%(message)s\"}'"
+    }
+   ],
+   "submitted": {
+    "summary": "Commit 7d03b5f (checkout/pricing.py, compute_total) takes every percent coupon off twice. The new loop already subtracts subtotal*value/100 for each percent coupon (line 11), and then lines 15\u201316 sum the percent values and subtract subtotal*percent/100 again. So a 10% coupon now takes 20% off, which matches N1 and N2. The other two commits don't touch discount logic: a41c9e2 renames shipping_address to shipping and leaves the compute_total call unchanged, and c92e1aa only changes the log format.",
+    "evidence": [
+     {
+      "ref": "code:checkout/pricing.py:11@v1.4.2",
+      "detail": "Inside the new `for c in coupons` loop, `total -= subtotal * c[\"value\"] / 100` takes off each percent coupon once."
+     },
+     {
+      "ref": "code:checkout/pricing.py:15@v1.4.2",
+      "detail": "After the loop, `percent = sum(...)` and then line 16 `total -= subtotal * percent / 100` take the same percent off a second time."
+     },
+     {
+      "ref": "commit:7d03b5f",
+      "detail": "'Allow stacking a percent coupon with a fixed coupon' turned the single-coupon `if coupons: c = coupons[0]` into a loop and added the extra percent subtraction."
+     },
+     {
+      "ref": "commit:a41c9e2",
+      "detail": "Ruled out: it only renames the shipping_address key to shipping in cart.py and orders.py, and orders.py calls compute_total exactly as before."
+     },
+     {
+      "ref": "commit:c92e1aa",
+      "detail": "Ruled out: it only changes LOG_FORMAT to JSON in logging_config.py."
+     },
+     {
+      "ref": "deploy:v1.4.2",
+      "detail": "7d03b5f shipped in v1.4.2 at 14:10Z, the same bucket where avg_order_value stepped down."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "Support saw a 10% coupon take 20% off, exactly what the double subtraction would do."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "Commit 7d03b5f (checkout/pricing.py, compute_total) takes every percent coupon off twice. The new loop already subtracts subtotal*value/100 for each percent coupon (line 11), and then lines 15\u201316 sum the percent values and subtract subtotal*percent/100 again. So a 10% coupon now takes 20% off, which matches N1 and N2. The other two commits don't touch discount logic: a41c9e2 renames shipping_address to shipping and leaves the compute_total call unchanged, and c92e1aa only changes the log format.",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "code:checkout/pricing.py:11@v1.4.2",
+     "detail": "Inside the new `for c in coupons` loop, `total -= subtotal * c[\"value\"] / 100` takes off each percent coupon once.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/pricing.py:15@v1.4.2",
+     "detail": "After the loop, `percent = sum(...)` and then line 16 `total -= subtotal * percent / 100` take the same percent off a second time.",
+     "verified": true
+    },
+    {
+     "ref": "commit:7d03b5f",
+     "detail": "'Allow stacking a percent coupon with a fixed coupon' turned the single-coupon `if coupons: c = coupons[0]` into a loop and added the extra percent subtraction.",
+     "verified": true
+    },
+    {
+     "ref": "commit:a41c9e2",
+     "detail": "Ruled out: it only renames the shipping_address key to shipping in cart.py and orders.py, and orders.py calls compute_total exactly as before.",
+     "verified": true
+    },
+    {
+     "ref": "commit:c92e1aa",
+     "detail": "Ruled out: it only changes LOG_FORMAT to JSON in logging_config.py.",
+     "verified": true
+    },
+    {
+     "ref": "deploy:v1.4.2",
+     "detail": "7d03b5f shipped in v1.4.2 at 14:10Z, the same bucket where avg_order_value stepped down.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "Support saw a 10% coupon take 20% off, exactly what the double subtraction would do.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "reproducer",
+   "task": "Write a pytest test for checkout/pricing.py compute_total. Use a cart with subtotal 100.00 and a single 10% percent coupon (in the coupon dict format compute_total expects), and assert the result reflects exactly a 10% discount (90.00 before any tax/shipping the function adds; compare against the no-coupon total minus 10% of subtotal). The test should fail on v1.4.2, where the discount comes out to 20%, and pass on v1.4.1.",
+   "calls": [
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/pricing.py"
+     },
+     "result": "checkout/pricing.py @ v1.4.2\n   1  \"\"\"Order totals and coupons.\"\"\"\n   2  \n   3  \n   4  def compute_total(items: list[dict], coupons: list[dict]) -> float:\n   5      \"\"\"Subtotal minus every coupon. A percent coupon takes value% off the subtotal;\n   6      a fixed coupon takes value dollars off. Coupons can now be stacked.\"\"\"\n   7      subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n   8      total = subtotal\n   9      for c in coupons:\n  10          if c[\"kind\"] == \"percent\":\n  11              total -= subtotal * c[\"value\"] / 100\n  12          elif c[\"kind\"] == \"fixed\":\n  13              total -= c[\"value\"]\n  14      # Percent coupons apply to the subtotal, not to an already-discounted total.\n  15      percent = sum(c[\"value\"] for c in coupons if c[\"kind\"] == \"percent\")\n  16      total -= subtotal * percent / 100\n  17      return round(max(total, 0), 2)"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/pricing.py",
+      "version": "v1.4.1"
+     },
+     "result": "checkout/pricing.py @ v1.4.1\n   1  \"\"\"Order totals and coupons.\"\"\"\n   2  \n   3  \n   4  def compute_total(items: list[dict], coupons: list[dict]) -> float:\n   5      \"\"\"Subtotal minus at most one coupon. A percent coupon takes value% off the subtotal;\n   6      a fixed coupon takes value dollars off.\"\"\"\n   7      subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n   8      total = subtotal\n   9      if coupons:\n  10          c = coupons[0]\n  11          if c[\"kind\"] == \"percent\":\n  12              total -= subtotal * c[\"value\"] / 100\n  13          elif c[\"kind\"] == \"fixed\":\n  14              total -= c[\"value\"]\n  15      return round(max(total, 0), 2)"
+    }
+   ],
+   "submitted": {
+    "test_code": "import math\nfrom checkout.pricing import compute_total\n\n\ndef test_single_percent_coupon_takes_exactly_ten_percent():\n    items = [{\"price\": 100.00, \"qty\": 1}]\n    coupon = {\"kind\": \"percent\", \"value\": 10}\n    base = compute_total(items, [])\n    discounted = compute_total(items, [coupon])\n    assert math.isclose(base, 100.00, abs_tol=0.005)\n    assert math.isclose(discounted, base - 10.00, abs_tol=0.005)\n    assert math.isclose(discounted, 90.00, abs_tol=0.005)\n",
+    "what_it_checks": "A single 10% percent coupon on a 100.00 subtotal gives exactly 90.00 (no-coupon total minus 10%), not 80.00."
+   },
+   "test_code": "import math\nfrom checkout.pricing import compute_total\n\n\ndef test_single_percent_coupon_takes_exactly_ten_percent():\n    items = [{\"price\": 100.00, \"qty\": 1}]\n    coupon = {\"kind\": \"percent\", \"value\": 10}\n    base = compute_total(items, [])\n    discounted = compute_total(items, [coupon])\n    assert math.isclose(base, 100.00, abs_tol=0.005)\n    assert math.isclose(discounted, base - 10.00, abs_tol=0.005)\n    assert math.isclose(discounted, 90.00, abs_tol=0.005)\n",
+   "summary": "A single 10% percent coupon on a 100.00 subtotal gives exactly 90.00 (no-coupon total minus 10%), not 80.00.",
+   "repro": {
+    "ran": true,
+    "problems": [],
+    "runs": [
+     {
+      "version": "v1.4.1",
+      "outcome": "passed",
+      "output": ".                                                                        [100%]\n1 passed in 0.01s",
+      "ms": 0
+     },
+     {
+      "version": "v1.4.2",
+      "outcome": "failed",
+      "output": "F                                                                        [100%]\n================================== FAILURES ===================================\n____________ test_single_percent_coupon_takes_exactly_ten_percent _____________\n    def test_single_percent_coupon_takes_exactly_ten_percent():\n        items = [{\"price\": 100.00, \"qty\": 1}]\n        coupon = {\"kind\": \"percent\", \"value\": 10}\n        base = compute_total(items, [])\n        discounted = compute_total(items, [coupon])\n        assert math.isclose(base, 100.00, abs_tol=0.005)\n>       assert math.isclose(discounted, base - 10.00, abs_tol=0.005)\nE       assert False\nE        +  where False = <built-in function isclose>(80.0, (100.0 - 10.0), abs_tol=0.005)\nE        +    where <built-in function isclose> = math.isclose\ntest_repro.py:11: AssertionError\n=========================== short test summary info ===========================\nFAILED test_repro.py::test_single_percent_coupon_takes_exactly_ten_percent - ...\n1 failed in 0.13s",
+      "ms": 0
+     }
+    ],
+    "proves": true
+   },
+   "evidence": [
+    {
+     "ref": "test:repro",
+     "detail": "Reproduction test run on v1.4.1 and v1.4.2",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  }
+ ],
+ "report": {
+  "root_cause": "Commit 7d03b5f in v1.4.2 changed compute_total in checkout/pricing.py to support coupon stacking, and in doing so takes every percent coupon off twice. The loop subtracts it at line 11, then lines 15\u201316 sum the percents and subtract them again, so a 10% coupon takes 20% off. Average order value stepped down in the 14:10 deploy bucket with no change in order volume, coupon use or errors, which explains why no alerts fired.",
+  "caused_by_deploy": true,
+  "suspected_commit": "7d03b5f",
+  "suspected_location": "checkout/pricing.py:15",
+  "evidence": [
+   {
+    "ref": "code:checkout/pricing.py:11@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/pricing.py:15@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "commit:7d03b5f",
+    "verified": true
+   },
+   {
+    "ref": "test:repro",
+    "verified": true
+   },
+   {
+    "ref": "metric:avg_order_value_usd",
+    "verified": true
+   },
+   {
+    "ref": "deploy:v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "metric:orders_per_min",
+    "verified": true
+   },
+   {
+    "ref": "metric:coupon_redemptions_per_min",
+    "verified": true
+   },
+   {
+    "ref": "metric:error_rate_pct",
+    "verified": true
+   },
+   {
+    "ref": "note:N1",
+    "verified": true
+   },
+   {
+    "ref": "note:N2",
+    "verified": true
+   }
+  ],
+  "ruled_out": [
+   "Commit a41c9e2 only renames shipping_address to shipping, and compute_total is still called the same way.",
+   "Commit c92e1aa only changes the log format to JSON.",
+   "An earlier start or another change is unlikely: AOV was flat before 14:10, and there were no other deploys since v1.4.1 on 2026-11-05 and no recorded config changes.",
+   "Lost or failed orders are unlikely: orders_per_min and error_rate_pct were unchanged.",
+   "More coupons being redeemed is unlikely: coupon_redemptions_per_min stayed steady at about 4.6\u20135.3."
+  ],
+  "suggested_fix": "In compute_total, remove the second percent subtraction after the loop (the percent sum at line 15 and the subtraction at line 16) so each percent coupon is applied once, and add the reproduction test to the suite. Rolling back to v1.4.1 is also an option for immediate mitigation.",
+  "confidence": "high"
+ },
+ "verdict": "confirmed",
+ "verdictReason": "A test fails on v1.4.2 and passes on v1.4.1, and the report names a commit from the deploy.",
+ "delegations": 3,
+ "budget": 8,
+ "usage": null
+}

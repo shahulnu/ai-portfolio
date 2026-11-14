@@ -1,0 +1,686 @@
+{
+ "incidentId": "INC-201",
+ "mode": "replay",
+ "engine": "python",
+ "model": "claude-opus-5-5",
+ "incident": {
+  "id": "INC-201",
+  "title": "Checkout 500 errors after the afternoon deploy",
+  "teaser": "Errors jump right after the deploy; one code path missed a rename",
+  "opened": "2026-11-12T14:24:00Z",
+  "description": "Alert: checkout error rate above 5% for 10 minutes. Some customers can't place orders. The v1.4.2 deploy went out at 14:10 UTC."
+ },
+ "steps": [
+  {
+   "n": 1,
+   "reasoning": "No findings yet; first confirm timing of the error spike relative to the 14:10 deploy to see if the deploy is plausibly the cause.",
+   "action": "delegate",
+   "specialist": "metrics_analyst",
+   "task": "When exactly did the checkout 5xx error rate start rising on 2026-11-12, relative to the v1.4.2 deploy at 14:10 UTC? Was there any elevated error rate before 14:10, and are there any other changes (config, infra, dependency) noted around that time?",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 2,
+   "reasoning": "Errors stepped up right at the v1.4.2 deploy and look tied to gift orders, so a code change in one of the three commits is the likely cause. Next step is to find which commit touches the gift/order checkout path.",
+   "action": "delegate",
+   "specialist": "change_investigator",
+   "task": "Review commits a41c9e2, 7d03b5f, c92e1aa in v1.4.2. Which of them change checkout code paths, especially gift orders (gift message, gift recipient, gift wrap, alternate shipping address)? Summarize each relevant diff and point out any change that could raise an exception for gift orders, citing file and line.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 3,
+   "reasoning": "Errors began with the v1.4.2 deploy and cluster on gift orders. The leading suspect is the a41c9e2 key rename (KeyError at orders.py:10), but nothing has yet tied it to gift orders, so the actual exceptions behind the 500s are the most direct check.",
+   "action": "delegate",
+   "specialist": "log_analyst",
+   "task": "Search checkout service logs from 14:10 to 15:00 UTC on 2026-11-12 for the 500 errors. What exception types and stack traces appear, with file and line? Are any of them KeyError 'shipping' or 'shipping_address', and do the failing requests involve gift orders (gift=true, gift_message, or an alternate recipient address)? Summarize counts per exception type and compare with 13:30\u201314:10.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 4,
+   "reasoning": "Logs show KeyError 'shipping_address' in build_gift_order on every failing gift checkout after 14:10, consistent with a41c9e2's key rename, so this looks like a deploy code bug. It needs a reproducing test before I conclude.",
+   "action": "delegate",
+   "specialist": "reproducer",
+   "task": "Write a pytest test that builds a gift order through the normal path (cart from checkout.cart.make_cart with gift=True and a gift_message, plus a shipping address), then calls checkout.orders.build_gift_order, or whichever order-building entry point handles gift orders. Assert that it returns an order without raising KeyError and that the order's ship-to address matches the cart's shipping address. The test should fail on v1.4.2 with KeyError 'shipping_address' and pass on v1.4.1.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 5,
+   "reasoning": "The reproducer proved that v1.4.2 introduced the gift-order KeyError. However, the faulty line in build_gift_order (logs suggest checkout/orders.py:18) has only been inferred from a stack trace and not confirmed in source, so the code_reader should cite it.",
+   "action": "delegate",
+   "specialist": "code_reader",
+   "task": "In v1.4.2, read checkout/orders.py build_gift_order (and compare with v1.4.1). Cite the exact line that reads cart['shipping_address'] (code:checkout/orders.py:<line>@v1.4.2), confirm it raises KeyError for carts made by make_cart, which now use the 'shipping' key, and list any other places in v1.4.2 still using the old 'shipping_address' key.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 6,
+   "reasoning": "The cause is proven: commit a41c9e2 renamed the cart key to 'shipping' but missed build_gift_order at checkout/orders.py:18@v1.4.2, so every gift order raises KeyError and returns a 500. The logs, the timing, the code reading and the repro test (passes on v1.4.1, fails on v1.4.2) all agree; separately, 7d03b5f applies percent coupons twice and should also be fixed.",
+   "action": "conclude",
+   "specialist": null,
+   "task": "",
+   "ms": 0,
+   "by": "orchestrator"
+  }
+ ],
+ "findings": [
+  {
+   "specialist": "metrics_analyst",
+   "task": "When exactly did the checkout 5xx error rate start rising on 2026-11-12, relative to the v1.4.2 deploy at 14:10 UTC? Was there any elevated error rate before 14:10, and are there any other changes (config, infra, dependency) noted around that time?",
+   "calls": [
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "checkout_5xx_rate"
+     },
+     "result": "Unknown metric. Available: error_rate_pct, orders_per_min, avg_order_value_usd, payment_timeouts_per_min"
+    },
+    {
+     "tool": "get_deploys",
+     "args": {},
+     "result": "- v1.4.1 deployed 2026-11-05T15:30:00Z; commits: n/a\n- v1.4.2 deployed 2026-11-12T14:10:00Z; commits: a41c9e2, 7d03b5f, c92e1aa"
+    },
+    {
+     "tool": "get_notes",
+     "args": {},
+     "result": "N1 2026-11-12T14:21:00Z [support] Two customers report 'something went wrong' when sending an order as a gift."
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "error_rate_pct"
+     },
+     "result": "error_rate_pct, 10-minute averages:\n- 13:30\u201313:39 UTC: 0.22\n- 13:40\u201313:49 UTC: 0.15\n- 13:50\u201313:59 UTC: 0.29\n- 14:00\u201314:09 UTC: 0.18\n- 14:10\u201314:19 UTC: 6.06\n- 14:20\u201314:29 UTC: 6.09\n- 14:30\u201314:39 UTC: 6.13\n- 14:40\u201314:49 UTC: 6.19\n- 14:50\u201314:59 UTC: 6.11"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "payment_timeouts_per_min"
+     },
+     "result": "payment_timeouts_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 0.20\n- 13:40\u201313:49 UTC: 0.10\n- 13:50\u201313:59 UTC: 0.40\n- 14:00\u201314:09 UTC: 0.30\n- 14:10\u201314:19 UTC: 0.40\n- 14:20\u201314:29 UTC: 0.40\n- 14:30\u201314:39 UTC: 0.40\n- 14:40\u201314:49 UTC: 0.10\n- 14:50\u201314:59 UTC: 0.30"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "orders_per_min"
+     },
+     "result": "orders_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 20.11\n- 13:40\u201313:49 UTC: 19.56\n- 13:50\u201313:59 UTC: 20.16\n- 14:00\u201314:09 UTC: 20.35\n- 14:10\u201314:19 UTC: 19.08\n- 14:20\u201314:29 UTC: 18.73\n- 14:30\u201314:39 UTC: 18.91\n- 14:40\u201314:49 UTC: 19.07\n- 14:50\u201314:59 UTC: 19.35"
+    }
+   ],
+   "submitted": {
+    "summary": "The error rate jumped in the first window after the deploy. It went from 0.18% at 14:00\u201314:09 to 6.06% at 14:10\u201314:19, then held flat at about 6.1\u20136.2% through 14:59. The metric only has 10-minute averages, so the onset can only be placed somewhere in 14:10\u201314:19, not to the minute. Before 14:10 the rate was normal (0.15\u20130.29% from 13:30 to 14:09). Payment timeouts stayed flat, so a payment-provider cause looks unlikely, and no config, infra or dependency change was recorded.",
+    "evidence": [
+     {
+      "ref": "metric:error_rate_pct",
+      "detail": "0.15\u20130.29% from 13:30 to 14:09, then 6.06% at 14:10\u201314:19 and 6.09\u20136.19% through 14:59. The step lines up with the deploy window. This is the overall error rate; there is no checkout-only 5xx metric."
+     },
+     {
+      "ref": "deploy:v1.4.2",
+      "detail": "Deployed 14:10:00Z with commits a41c9e2, 7d03b5f, c92e1aa. The only other deploy is v1.4.1 on 2026-11-05."
+     },
+     {
+      "ref": "metric:payment_timeouts_per_min",
+      "detail": "Flat at 0.1\u20130.4/min before and after 14:10, so payment timeouts don't explain the errors."
+     },
+     {
+      "ref": "metric:orders_per_min",
+      "detail": "Small drop from about 20.1\u201320.4 to 18.7\u201319.4/min after 14:10, consistent with about 6% of orders failing."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "14:21 support ticket: customers get errors when sending an order as a gift, which suggests the failures hit one specific checkout path. No notes mention config, infra or vendor changes."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "The error rate jumped in the first window after the deploy. It went from 0.18% at 14:00\u201314:09 to 6.06% at 14:10\u201314:19, then held flat at about 6.1\u20136.2% through 14:59. The metric only has 10-minute averages, so the onset can only be placed somewhere in 14:10\u201314:19, not to the minute. Before 14:10 the rate was normal (0.15\u20130.29% from 13:30 to 14:09). Payment timeouts stayed flat, so a payment-provider cause looks unlikely, and no config, infra or dependency change was recorded.",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "metric:error_rate_pct",
+     "detail": "0.15\u20130.29% from 13:30 to 14:09, then 6.06% at 14:10\u201314:19 and 6.09\u20136.19% through 14:59. The step lines up with the deploy window. This is the overall error rate; there is no checkout-only 5xx metric.",
+     "verified": true
+    },
+    {
+     "ref": "deploy:v1.4.2",
+     "detail": "Deployed 14:10:00Z with commits a41c9e2, 7d03b5f, c92e1aa. The only other deploy is v1.4.1 on 2026-11-05.",
+     "verified": true
+    },
+    {
+     "ref": "metric:payment_timeouts_per_min",
+     "detail": "Flat at 0.1\u20130.4/min before and after 14:10, so payment timeouts don't explain the errors.",
+     "verified": true
+    },
+    {
+     "ref": "metric:orders_per_min",
+     "detail": "Small drop from about 20.1\u201320.4 to 18.7\u201319.4/min after 14:10, consistent with about 6% of orders failing.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "14:21 support ticket: customers get errors when sending an order as a gift, which suggests the failures hit one specific checkout path. No notes mention config, infra or vendor changes.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "change_investigator",
+   "task": "Review commits a41c9e2, 7d03b5f, c92e1aa in v1.4.2. Which of them change checkout code paths, especially gift orders (gift message, gift recipient, gift wrap, alternate shipping address)? Summarize each relevant diff and point out any change that could raise an exception for gift orders, citing file and line.",
+   "calls": [
+    {
+     "tool": "list_commits",
+     "args": {},
+     "result": "a41c9e2 2026-11-12T11:05:00Z dev-lee: Rename shipping_address to shipping in the cart schema (files: checkout/cart.py, checkout/orders.py)\n7d03b5f 2026-11-12T12:40:00Z dev-sam: Allow stacking a percent coupon with a fixed coupon (files: checkout/pricing.py)\nc92e1aa 2026-11-12T13:20:00Z dev-kim: Switch service logs to JSON format (files: checkout/logging_config.py)"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "a41c9e2"
+     },
+     "result": "commit a41c9e2 Rename shipping_address to shipping in the cart schema\n--- a/checkout/cart.py\n+++ b/checkout/cart.py\n@@ -2,8 +2,8 @@\n \n \n-def make_cart(items: list[dict], shipping_address: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n+def make_cart(items: list[dict], shipping: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n     return {\n         \"items\": items,\n-        \"shipping_address\": shipping_address,\n+        \"shipping\": shipping,\n         \"gift\": gift,\n         \"gift_message\": gift_message,\n--- a/checkout/orders.py\n+++ b/checkout/orders.py\n@@ -8,5 +8,5 @@\n         \"id\": order_id,\n         \"items\": cart[\"items\"],\n-        \"ship_to\": cart[\"shipping_address\"],\n+        \"ship_to\": cart[\"shipping\"],\n         \"total\": compute_total(cart[\"items\"], coupons),\n     }"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "7d03b5f"
+     },
+     "result": "commit 7d03b5f Allow stacking a percent coupon with a fixed coupon\n--- a/checkout/pricing.py\n+++ b/checkout/pricing.py\n@@ -3,13 +3,15 @@\n \n def compute_total(items: list[dict], coupons: list[dict]) -> float:\n-    \"\"\"Subtotal minus at most one coupon. A percent coupon takes value% off the subtotal;\n-    a fixed coupon takes value dollars off.\"\"\"\n+    \"\"\"Subtotal minus every coupon. A percent coupon takes value% off the subtotal;\n+    a fixed coupon takes value dollars off. Coupons can now be stacked.\"\"\"\n     subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n     total = subtotal\n-    if coupons:\n-        c = coupons[0]\n+    for c in coupons:\n         if c[\"kind\"] == \"percent\":\n             total -= subtotal * c[\"value\"] / 100\n         elif c[\"kind\"] == \"fixed\":\n             total -= c[\"value\"]\n+    # Percent coupons apply to the subtotal, not to an already-discounted total.\n+    percent = sum(c[\"value\"] for c in coupons if c[\"kind\"] == \"percent\")\n+    total -= subtotal * percent / 100\n     return round(max(total, 0), 2)"
+    },
+    {
+     "tool": "show_diff",
+     "args": {
+      "sha": "c92e1aa"
+     },
+     "result": "commit c92e1aa Switch service logs to JSON format\n--- a/checkout/logging_config.py\n+++ b/checkout/logging_config.py\n@@ -1,3 +1,3 @@\n \"\"\"Log format for the checkout service.\"\"\"\n \n-LOG_FORMAT = \"%(asctime)s %(levelname)s %(name)s %(message)s\"\n+LOG_FORMAT = '{\"ts\": \"%(asctime)s\", \"level\": \"%(levelname)s\", \"logger\": \"%(name)s\", \"msg\": \"%(message)s\"}'"
+    }
+   ],
+   "submitted": {
+    "summary": "None of the three v1.4.2 commits touches gift-specific code: no gift message, recipient, wrap or alternate-address logic appears in any diff. The only change that could plausibly raise an exception in checkout is a41c9e2. It renamed the cart key \"shipping_address\" to \"shipping\" in checkout/cart.py, and checkout/orders.py now reads cart[\"shipping\"]. Any cart built outside make_cart, or saved before the deploy, that still uses the old key would hit a KeyError. A gift or alternate-address path is a plausible place for that, but I can't confirm it from these diffs. 7d03b5f applies percent coupons twice (it overcharges no one but over-discounts, a wrong-price bug that raises nothing), and c92e1aa only changes the log format.",
+    "evidence": [
+     {
+      "ref": "commit:a41c9e2",
+      "detail": "checkout/cart.py make_cart (around line 4\u20137): the parameter and dict key change from shipping_address to shipping; the gift and gift_message fields are unchanged."
+     },
+     {
+      "ref": "code:checkout/orders.py:10@v1.4.2",
+      "detail": "\"ship_to\": cart[\"shipping\"] \u2014 any cart dict still built with the old \"shipping_address\" key (other callers, saved carts, maybe a gift/alternate-address flow) would raise a KeyError here and return a 500."
+     },
+     {
+      "ref": "commit:7d03b5f",
+      "detail": "checkout/pricing.py compute_total: the loop already takes percent coupons off, then lines added around 14\u201316 subtract them a second time. Totals come out too low (floored at 0 by max). It's a pricing bug, not an exception, and has nothing to do with gifts."
+     },
+     {
+      "ref": "commit:c92e1aa",
+      "detail": "checkout/logging_config.py:3 only changes LOG_FORMAT to a JSON-like string. That can produce invalid JSON when a message contains quotes, but the formatting itself doesn't raise; ruled out as the 500 source."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "The errors are tied to gift orders. The only diff that touches shipping or address data is a41c9e2, so it's the leading suspect; next step is to grep for callers that use the 'shipping_address' key or pass it as a keyword argument."
+     }
+    ],
+    "confidence": "medium"
+   },
+   "summary": "None of the three v1.4.2 commits touches gift-specific code: no gift message, recipient, wrap or alternate-address logic appears in any diff. The only change that could plausibly raise an exception in checkout is a41c9e2. It renamed the cart key \"shipping_address\" to \"shipping\" in checkout/cart.py, and checkout/orders.py now reads cart[\"shipping\"]. Any cart built outside make_cart, or saved before the deploy, that still uses the old key would hit a KeyError. A gift or alternate-address path is a plausible place for that, but I can't confirm it from these diffs. 7d03b5f applies percent coupons twice (it overcharges no one but over-discounts, a wrong-price bug that raises nothing), and c92e1aa only changes the log format.",
+   "confidence": "medium",
+   "evidence": [
+    {
+     "ref": "commit:a41c9e2",
+     "detail": "checkout/cart.py make_cart (around line 4\u20137): the parameter and dict key change from shipping_address to shipping; the gift and gift_message fields are unchanged.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/orders.py:10@v1.4.2",
+     "detail": "\"ship_to\": cart[\"shipping\"] \u2014 any cart dict still built with the old \"shipping_address\" key (other callers, saved carts, maybe a gift/alternate-address flow) would raise a KeyError here and return a 500.",
+     "verified": true
+    },
+    {
+     "ref": "commit:7d03b5f",
+     "detail": "checkout/pricing.py compute_total: the loop already takes percent coupons off, then lines added around 14\u201316 subtract them a second time. Totals come out too low (floored at 0 by max). It's a pricing bug, not an exception, and has nothing to do with gifts.",
+     "verified": true
+    },
+    {
+     "ref": "commit:c92e1aa",
+     "detail": "checkout/logging_config.py:3 only changes LOG_FORMAT to a JSON-like string. That can produce invalid JSON when a message contains quotes, but the formatting itself doesn't raise; ruled out as the 500 source.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "The errors are tied to gift orders. The only diff that touches shipping or address data is a41c9e2, so it's the leading suspect; next step is to grep for callers that use the 'shipping_address' key or pass it as a keyword argument.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "log_analyst",
+   "task": "Search checkout service logs from 14:10 to 15:00 UTC on 2026-11-12 for the 500 errors. What exception types and stack traces appear, with file and line? Are any of them KeyError 'shipping' or 'shipping_address', and do the failing requests involve gift orders (gift=true, gift_message, or an alternate recipient address)? Summarize counts per exception type and compare with 13:30\u201314:10.",
+   "calls": [
+    {
+     "tool": "error_summary",
+     "args": {},
+     "result": "Deploy of v1.4.2 at 2026-11-12T14:10:00Z. ERROR/WARN messages, counted before and after it:\n- ERROR x7 (before 0, after 7), first 2026-11-12T14:11:12Z (L0050): POST /checkout 500 order=* KeyError: 'shipping_address' (File \"checkout/orders.py\", line 1\n- WARN x3 (before 2, after 1), first 2026-11-12T13:37:30Z (L0010): PayFast charge timeout after 8s; retry 1 succeeded"
+    },
+    {
+     "tool": "get_notes",
+     "args": {},
+     "result": "N1 2026-11-12T14:21:00Z [support] Two customers report 'something went wrong' when sending an order as a gift."
+    },
+    {
+     "tool": "search_logs",
+     "args": {
+      "query": "KeyError",
+      "since": "2026-11-12T13:30:00Z",
+      "until": "2026-11-12T15:00:00Z"
+     },
+     "result": "7 matching line(s); showing 7.\nL0050 2026-11-12T14:11:12Z ERROR checkout.api POST /checkout 500 order=O-58042 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0057 2026-11-12T14:18:12Z ERROR checkout.api POST /checkout 500 order=O-58049 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0065 2026-11-12T14:25:12Z ERROR checkout.api POST /checkout 500 order=O-58056 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0073 2026-11-12T14:32:12Z ERROR checkout.api POST /checkout 500 order=O-58063 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0080 2026-11-12T14:39:12Z ERROR checkout.api POST /checkout 500 order=O-58070 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0089 2026-11-12T14:46:12Z ERROR checkout.api POST /checkout 500 order=O-58077 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)\nL0097 2026-11-12T14:53:12Z ERROR checkout.api POST /checkout 500 order=O-58084 KeyError: 'shipping_address' (File \"checkout/orders.py\", line 18, in build_gift_order)"
+    },
+    {
+     "tool": "search_logs",
+     "args": {
+      "query": "gift",
+      "since": "2026-11-12T13:30:00Z",
+      "until": "2026-11-12T15:00:00Z",
+      "limit": 50
+     },
+     "result": "90 matching line(s); showing 40.\nL0002 2026-11-12T13:30:10Z INFO checkout.orders order placed order=O-58001 gift=false subtotal=100.00 coupons=none total=100.00\nL0003 2026-11-12T13:31:10Z INFO checkout.orders order placed order=O-58002 gift=false subtotal=120.00 coupons=none total=120.00\nL0004 2026-11-12T13:32:10Z INFO checkout.orders order placed order=O-58003 gift=false subtotal=80.00 coupons=none total=80.00\nL0005 2026-11-12T13:33:10Z INFO checkout.orders order placed order=O-58004 gift=false subtotal=100.00 coupons=percent:10 total=90.00\nL0006 2026-11-12T13:34:10Z INFO checkout.orders order placed order=O-58005 gift=false subtotal=100.00 coupons=none total=100.00\nL0007 2026-11-12T13:35:10Z INFO checkout.orders order placed order=O-58006 gift=false subtotal=120.00 coupons=none total=120.00\nL0008 2026-11-12T13:36:10Z INFO checkout.orders order placed order=O-58007 gift=true subtotal=120.00 coupons=none total=120.00\nL0009 2026-11-12T13:37:10Z INFO checkout.orders order placed order=O-58008 gift=false subtotal=100.00 coupons=percent:10 total=90.00\nL0011 2026-11-12T13:38:10Z INFO checkout.orders order placed order=O-58009 gift=false subtotal=60.00 coupons=none total=60.00\nL0012 2026-11-12T13:39:10Z INFO checkout.orders order placed order=O-58010 gift=false subtotal=120.00 coupons=none total=120.00\nL0014 2026-11-12T13:40:10Z INFO checkout.orders order placed order=O-58011 gift=false subtotal=100.00 coupons=none total=100.00\nL0015 2026-11-12T13:41:10Z INFO checkout.orders order "
+    },
+    {
+     "tool": "search_logs",
+     "args": {
+      "query": "gift=true",
+      "since": "2026-11-12T14:10:00Z",
+      "until": "2026-11-12T15:00:00Z"
+     },
+     "result": "0 matching line(s); showing 0.\n"
+    },
+    {
+     "tool": "search_logs",
+     "args": {
+      "query": "percent:10",
+      "since": "2026-11-12T14:10:00Z",
+      "until": "2026-11-12T15:00:00Z",
+      "limit": 5
+     },
+     "result": "10 matching line(s); showing 5.\nL0052 2026-11-12T14:13:10Z INFO checkout.orders order placed order=O-58044 gift=false subtotal=100.00 coupons=percent:10 total=80.00\nL0056 2026-11-12T14:17:10Z INFO checkout.orders order placed order=O-58048 gift=false subtotal=80.00 coupons=percent:10 total=64.00\nL0061 2026-11-12T14:21:10Z INFO checkout.orders order placed order=O-58052 gift=false subtotal=100.00 coupons=percent:10 total=80.00\nL0069 2026-11-12T14:29:10Z INFO checkout.orders order placed order=O-58060 gift=false subtotal=80.00 coupons=percent:10 total=64.00\nL0074 2026-11-12T14:33:10Z INFO checkout.orders order placed order=O-58064 gift=false subtotal=80.00 coupons=percent:10 total=64.00"
+    }
+   ],
+   "submitted": {
+    "summary": "The logs show one exception type behind the checkout 500s from 14:10 to 15:00: KeyError: 'shipping_address' at checkout/orders.py line 18 in build_gift_order. It happened 7 times, from 14:11:12 to 14:53:12, and every one was a POST /checkout 500. From 13:30 to 14:10 there were 0 errors, and 5 gift=true orders went through. After 14:10 not a single gift=true order succeeded. So the failures are limited to gift orders, which is consistent with a41c9e2's rename of shipping_address to shipping. The failing key is the old name 'shipping_address', not 'shipping': build_gift_order seems to still read the old key from carts that now use 'shipping'. Line 18 is my reading of the trace; I haven't seen the code. Separately, the logs confirm the 7d03b5f percent-coupon double-discount (no errors, just wrong totals).",
+    "evidence": [
+     {
+      "ref": "log:L0050",
+      "detail": "First 500 at 14:11:12: KeyError: 'shipping_address', File checkout/orders.py line 18, in build_gift_order, order O-58042."
+     },
+     {
+      "ref": "log:L0097",
+      "detail": "Last of 7 identical KeyError 500s, at 14:53:12; the others are L0057, L0065, L0073, L0080 and L0089, about one every 7 minutes."
+     },
+     {
+      "ref": "log:L0010",
+      "detail": "Only other warning type: PayFast charge timeout, retry succeeded. 2 before the deploy and 1 after, so not the cause."
+     },
+     {
+      "ref": "log:L0041",
+      "detail": "Gift orders succeeded before the deploy: 5 gift=true orders placed 13:30\u201314:10 (also L0008, L0017, L0025, L0032). The search for gift=true after 14:10 returned 0 lines."
+     },
+     {
+      "ref": "log:L0052",
+      "detail": "Side issue: percent:10 coupon on a 100.00 subtotal now totals 80.00, versus 90.00 before the deploy (L0005). The discount is applied twice, matching 7d03b5f. No exception."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "14:21 support ticket: errors when sending an order as a gift, which matches build_gift_order in the stack traces."
+     },
+     {
+      "ref": "commit:a41c9e2",
+      "detail": "Renamed the cart key shipping_address to shipping; build_gift_order still reads the old key, which explains the KeyError."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "The logs show one exception type behind the checkout 500s from 14:10 to 15:00: KeyError: 'shipping_address' at checkout/orders.py line 18 in build_gift_order. It happened 7 times, from 14:11:12 to 14:53:12, and every one was a POST /checkout 500. From 13:30 to 14:10 there were 0 errors, and 5 gift=true orders went through. After 14:10 not a single gift=true order succeeded. So the failures are limited to gift orders, which is consistent with a41c9e2's rename of shipping_address to shipping. The failing key is the old name 'shipping_address', not 'shipping': build_gift_order seems to still read the old key from carts that now use 'shipping'. Line 18 is my reading of the trace; I haven't seen the code. Separately, the logs confirm the 7d03b5f percent-coupon double-discount (no errors, just wrong totals).",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "log:L0050",
+     "detail": "First 500 at 14:11:12: KeyError: 'shipping_address', File checkout/orders.py line 18, in build_gift_order, order O-58042.",
+     "verified": true
+    },
+    {
+     "ref": "log:L0097",
+     "detail": "Last of 7 identical KeyError 500s, at 14:53:12; the others are L0057, L0065, L0073, L0080 and L0089, about one every 7 minutes.",
+     "verified": true
+    },
+    {
+     "ref": "log:L0010",
+     "detail": "Only other warning type: PayFast charge timeout, retry succeeded. 2 before the deploy and 1 after, so not the cause.",
+     "verified": true
+    },
+    {
+     "ref": "log:L0041",
+     "detail": "Gift orders succeeded before the deploy: 5 gift=true orders placed 13:30\u201314:10 (also L0008, L0017, L0025, L0032). The search for gift=true after 14:10 returned 0 lines.",
+     "verified": true
+    },
+    {
+     "ref": "log:L0052",
+     "detail": "Side issue: percent:10 coupon on a 100.00 subtotal now totals 80.00, versus 90.00 before the deploy (L0005). The discount is applied twice, matching 7d03b5f. No exception.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "14:21 support ticket: errors when sending an order as a gift, which matches build_gift_order in the stack traces.",
+     "verified": true
+    },
+    {
+     "ref": "commit:a41c9e2",
+     "detail": "Renamed the cart key shipping_address to shipping; build_gift_order still reads the old key, which explains the KeyError.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "reproducer",
+   "task": "Write a pytest test that builds a gift order through the normal path (cart from checkout.cart.make_cart with gift=True and a gift_message, plus a shipping address), then calls checkout.orders.build_gift_order, or whichever order-building entry point handles gift orders. Assert that it returns an order without raising KeyError and that the order's ship-to address matches the cart's shipping address. The test should fail on v1.4.2 with KeyError 'shipping_address' and pass on v1.4.1.",
+   "calls": [
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/cart.py"
+     },
+     "result": "checkout/cart.py @ v1.4.2\n   1  \"\"\"Builds a cart from the checkout form.\"\"\"\n   2  \n   3  \n   4  def make_cart(items: list[dict], shipping: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n   5      return {\n   6          \"items\": items,\n   7          \"shipping\": shipping,\n   8          \"gift\": gift,\n   9          \"gift_message\": gift_message,\n  10      }"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/orders.py"
+     },
+     "result": "checkout/orders.py @ v1.4.2\n   1  \"\"\"Turns a cart into an order.\"\"\"\n   2  \n   3  from checkout.pricing import compute_total\n   4  \n   5  \n   6  def build_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n   7      return {\n   8          \"id\": order_id,\n   9          \"items\": cart[\"items\"],\n  10          \"ship_to\": cart[\"shipping\"],\n  11          \"total\": compute_total(cart[\"items\"], coupons),\n  12      }\n  13  \n  14  \n  15  def build_gift_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  16      order = build_order(order_id, cart, coupons)\n  17      order[\"gift_message\"] = cart[\"gift_message\"]\n  18      order[\"ship_to\"] = cart[\"shipping_address\"]\n  19      order[\"hide_prices\"] = True\n  20      return order\n  21  \n  22  \n  23  def place_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  24      if cart[\"gift\"]:\n  25          return build_gift_order(order_id, cart, coupons)\n  26      return build_order(order_id, cart, coupons)"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/cart.py",
+      "version": "v1.4.1"
+     },
+     "result": "checkout/cart.py @ v1.4.1\n   1  \"\"\"Builds a cart from the checkout form.\"\"\"\n   2  \n   3  \n   4  def make_cart(items: list[dict], shipping_address: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n   5      return {\n   6          \"items\": items,\n   7          \"shipping_address\": shipping_address,\n   8          \"gift\": gift,\n   9          \"gift_message\": gift_message,\n  10      }"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/orders.py",
+      "version": "v1.4.1"
+     },
+     "result": "checkout/orders.py @ v1.4.1\n   1  \"\"\"Turns a cart into an order.\"\"\"\n   2  \n   3  from checkout.pricing import compute_total\n   4  \n   5  \n   6  def build_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n   7      return {\n   8          \"id\": order_id,\n   9          \"items\": cart[\"items\"],\n  10          \"ship_to\": cart[\"shipping_address\"],\n  11          \"total\": compute_total(cart[\"items\"], coupons),\n  12      }\n  13  \n  14  \n  15  def build_gift_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  16      order = build_order(order_id, cart, coupons)\n  17      order[\"gift_message\"] = cart[\"gift_message\"]\n  18      order[\"ship_to\"] = cart[\"shipping_address\"]\n  19      order[\"hide_prices\"] = True\n  20      return order\n  21  \n  22  \n  23  def place_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  24      if cart[\"gift\"]:\n  25          return build_gift_order(order_id, cart, coupons)\n  26      return build_order(order_id, cart, coupons)"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/pricing.py"
+     },
+     "result": "checkout/pricing.py @ v1.4.2\n   1  \"\"\"Order totals and coupons.\"\"\"\n   2  \n   3  \n   4  def compute_total(items: list[dict], coupons: list[dict]) -> float:\n   5      \"\"\"Subtotal minus every coupon. A percent coupon takes value% off the subtotal;\n   6      a fixed coupon takes value dollars off. Coupons can now be stacked.\"\"\"\n   7      subtotal = sum(i[\"price\"] * i[\"qty\"] for i in items)\n   8      total = subtotal\n   9      for c in coupons:\n  10          if c[\"kind\"] == \"percent\":\n  11              total -= subtotal * c[\"value\"] / 100\n  12          elif c[\"kind\"] == \"fixed\":\n  13              total -= c[\"value\"]\n  14      # Percent coupons apply to the subtotal, not to an already-discounted total.\n  15      percent = sum(c[\"value\"] for c in coupons if c[\"kind\"] == \"percent\")\n  16      total -= subtotal * percent / 100\n  17      return round(max(total, 0), 2)"
+    }
+   ],
+   "submitted": {
+    "test_code": "from checkout.cart import make_cart\nfrom checkout.orders import build_gift_order, place_order\n\n\nADDRESS = {\"name\": \"Ana Recipient\", \"line1\": \"1 Gift St\", \"city\": \"Lisbon\", \"zip\": \"1000-001\"}\nITEMS = [{\"sku\": \"MUG-1\", \"price\": 25.0, \"qty\": 2}]\n\n\ndef _gift_cart():\n    # positional args: shipping param was renamed between versions\n    return make_cart(ITEMS, ADDRESS, True, \"Happy birthday!\")\n\n\ndef test_build_gift_order_from_make_cart():\n    order = build_gift_order(\"O-1\", _gift_cart(), [])\n    assert order[\"ship_to\"] == ADDRESS\n    assert order[\"gift_message\"] == \"Happy birthday!\"\n    assert order[\"hide_prices\"] is True\n\n\ndef test_place_order_routes_gift_without_keyerror():\n    order = place_order(\"O-2\", _gift_cart(), [])\n    assert order[\"ship_to\"] == ADDRESS\n    assert order[\"total\"] == 50.0\n",
+    "what_it_checks": "A gift cart built by make_cart (positional args, with gift=True and a gift message) goes through build_gift_order/place_order without raising, and the order's ship_to equals the cart's shipping address."
+   },
+   "test_code": "from checkout.cart import make_cart\nfrom checkout.orders import build_gift_order, place_order\n\n\nADDRESS = {\"name\": \"Ana Recipient\", \"line1\": \"1 Gift St\", \"city\": \"Lisbon\", \"zip\": \"1000-001\"}\nITEMS = [{\"sku\": \"MUG-1\", \"price\": 25.0, \"qty\": 2}]\n\n\ndef _gift_cart():\n    # positional args: shipping param was renamed between versions\n    return make_cart(ITEMS, ADDRESS, True, \"Happy birthday!\")\n\n\ndef test_build_gift_order_from_make_cart():\n    order = build_gift_order(\"O-1\", _gift_cart(), [])\n    assert order[\"ship_to\"] == ADDRESS\n    assert order[\"gift_message\"] == \"Happy birthday!\"\n    assert order[\"hide_prices\"] is True\n\n\ndef test_place_order_routes_gift_without_keyerror():\n    order = place_order(\"O-2\", _gift_cart(), [])\n    assert order[\"ship_to\"] == ADDRESS\n    assert order[\"total\"] == 50.0\n",
+   "summary": "A gift cart built by make_cart (positional args, with gift=True and a gift message) goes through build_gift_order/place_order without raising, and the order's ship_to equals the cart's shipping address.",
+   "repro": {
+    "ran": true,
+    "problems": [],
+    "runs": [
+     {
+      "version": "v1.4.1",
+      "outcome": "passed",
+      "output": "..                                                                       [100%]\n2 passed in 0.01s",
+      "ms": 0
+     },
+     {
+      "version": "v1.4.2",
+      "outcome": "failed",
+      "output": "^^^^^^^^^^^^^^^^^\ntest_repro.py:22: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\ncheckout\\orders.py:25: in place_order\n    return build_gift_order(order_id, cart, coupons)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\norder_id = 'O-2'\ncart = {'items': [{'sku': 'MUG-1', 'price': 25.0, 'qty': 2}], 'shipping': {'name': 'Ana Recipient', 'line1': '1 Gift St', 'city': 'Lisbon', 'zip': '1000-001'}, 'gift': True, 'gift_message': 'Happy birthday!'}\ncoupons = []\n    def build_gift_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n        order = build_order(order_id, cart, coupons)\n        order[\"gift_message\"] = cart[\"gift_message\"]\n>       order[\"ship_to\"] = cart[\"shipping_address\"]\n                           ^^^^^^^^^^^^^^^^^^^^^^^^\nE       KeyError: 'shipping_address'\ncheckout\\orders.py:18: KeyError\n=========================== short test summary info ===========================\nFAILED test_repro.py::test_build_gift_order_from_make_cart - KeyError: 'shipp...\nFAILED test_repro.py::test_place_order_routes_gift_without_keyerror - KeyErro...\n2 failed in 0.17s",
+      "ms": 0
+     }
+    ],
+    "proves": true
+   },
+   "evidence": [
+    {
+     "ref": "test:repro",
+     "detail": "Reproduction test run on v1.4.1 and v1.4.2",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  },
+  {
+   "specialist": "code_reader",
+   "task": "In v1.4.2, read checkout/orders.py build_gift_order (and compare with v1.4.1). Cite the exact line that reads cart['shipping_address'] (code:checkout/orders.py:<line>@v1.4.2), confirm it raises KeyError for carts made by make_cart, which now use the 'shipping' key, and list any other places in v1.4.2 still using the old 'shipping_address' key.",
+   "calls": [
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/orders.py"
+     },
+     "result": "checkout/orders.py @ v1.4.2\n   1  \"\"\"Turns a cart into an order.\"\"\"\n   2  \n   3  from checkout.pricing import compute_total\n   4  \n   5  \n   6  def build_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n   7      return {\n   8          \"id\": order_id,\n   9          \"items\": cart[\"items\"],\n  10          \"ship_to\": cart[\"shipping\"],\n  11          \"total\": compute_total(cart[\"items\"], coupons),\n  12      }\n  13  \n  14  \n  15  def build_gift_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  16      order = build_order(order_id, cart, coupons)\n  17      order[\"gift_message\"] = cart[\"gift_message\"]\n  18      order[\"ship_to\"] = cart[\"shipping_address\"]\n  19      order[\"hide_prices\"] = True\n  20      return order\n  21  \n  22  \n  23  def place_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  24      if cart[\"gift\"]:\n  25          return build_gift_order(order_id, cart, coupons)\n  26      return build_order(order_id, cart, coupons)"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/orders.py",
+      "version": "v1.4.1"
+     },
+     "result": "checkout/orders.py @ v1.4.1\n   1  \"\"\"Turns a cart into an order.\"\"\"\n   2  \n   3  from checkout.pricing import compute_total\n   4  \n   5  \n   6  def build_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n   7      return {\n   8          \"id\": order_id,\n   9          \"items\": cart[\"items\"],\n  10          \"ship_to\": cart[\"shipping_address\"],\n  11          \"total\": compute_total(cart[\"items\"], coupons),\n  12      }\n  13  \n  14  \n  15  def build_gift_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  16      order = build_order(order_id, cart, coupons)\n  17      order[\"gift_message\"] = cart[\"gift_message\"]\n  18      order[\"ship_to\"] = cart[\"shipping_address\"]\n  19      order[\"hide_prices\"] = True\n  20      return order\n  21  \n  22  \n  23  def place_order(order_id: str, cart: dict, coupons: list[dict]) -> dict:\n  24      if cart[\"gift\"]:\n  25          return build_gift_order(order_id, cart, coupons)\n  26      return build_order(order_id, cart, coupons)"
+    },
+    {
+     "tool": "grep_code",
+     "args": {
+      "pattern": "shipping_address"
+     },
+     "result": "checkout/orders.py:18: order[\"ship_to\"] = cart[\"shipping_address\"]"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/cart.py"
+     },
+     "result": "checkout/cart.py @ v1.4.2\n   1  \"\"\"Builds a cart from the checkout form.\"\"\"\n   2  \n   3  \n   4  def make_cart(items: list[dict], shipping: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n   5      return {\n   6          \"items\": items,\n   7          \"shipping\": shipping,\n   8          \"gift\": gift,\n   9          \"gift_message\": gift_message,\n  10      }"
+    },
+    {
+     "tool": "read_file",
+     "args": {
+      "path": "checkout/cart.py",
+      "version": "v1.4.1"
+     },
+     "result": "checkout/cart.py @ v1.4.1\n   1  \"\"\"Builds a cart from the checkout form.\"\"\"\n   2  \n   3  \n   4  def make_cart(items: list[dict], shipping_address: dict, gift: bool = False, gift_message: str = \"\") -> dict:\n   5      return {\n   6          \"items\": items,\n   7          \"shipping_address\": shipping_address,\n   8          \"gift\": gift,\n   9          \"gift_message\": gift_message,\n  10      }"
+    }
+   ],
+   "submitted": {
+    "summary": "The line that fails is checkout/orders.py:18 in v1.4.2: `order[\"ship_to\"] = cart[\"shipping_address\"]` in build_gift_order. Commit a41c9e2 changed make_cart to store the address under the key \"shipping\" and updated build_order (line 10) to match, but missed line 18. So any gift cart built by make_cart raises KeyError 'shipping_address': place_order sends carts with gift set to build_gift_order (lines 24\u201325), and line 16 succeeds before line 18 fails. Line 18 is the only place in v1.4.2 that still uses 'shipping_address'. In v1.4.1, make_cart and both readers all used that key.",
+    "evidence": [
+     {
+      "ref": "code:checkout/orders.py:18@v1.4.2",
+      "detail": "build_gift_order reads cart[\"shipping_address\"], the old key. This is the line in the log traces."
+     },
+     {
+      "ref": "code:checkout/cart.py:7@v1.4.2",
+      "detail": "make_cart now stores the address under \"shipping\" and has no 'shipping_address' key, so line 18 raises KeyError."
+     },
+     {
+      "ref": "code:checkout/orders.py:10@v1.4.2",
+      "detail": "build_order was updated to cart[\"shipping\"], so non-gift orders still work and line 16 succeeds before line 18 fails."
+     },
+     {
+      "ref": "code:checkout/orders.py:24@v1.4.2",
+      "detail": "place_order sends carts with gift set to build_gift_order (line 25), so only gift orders fail."
+     },
+     {
+      "ref": "code:checkout/cart.py:7@v1.4.1",
+      "detail": "Before the deploy, make_cart stored 'shipping_address', and orders.py lines 10 and 18 both read it, so gift orders worked."
+     },
+     {
+      "ref": "code:checkout/orders.py:18@v1.4.1",
+      "detail": "Line 18 is the same in v1.4.1; the rename in a41c9e2 broke it without touching it."
+     },
+     {
+      "ref": "commit:a41c9e2",
+      "detail": "The rename to 'shipping' covered cart.py and build_order but missed build_gift_order. Searching v1.4.2 for 'shipping_address' finds only orders.py:18, so there are no other old-key users."
+     },
+     {
+      "ref": "log:L0050",
+      "detail": "The logged KeyError 'shipping_address' at orders.py line 18 in build_gift_order matches the code."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "The line that fails is checkout/orders.py:18 in v1.4.2: `order[\"ship_to\"] = cart[\"shipping_address\"]` in build_gift_order. Commit a41c9e2 changed make_cart to store the address under the key \"shipping\" and updated build_order (line 10) to match, but missed line 18. So any gift cart built by make_cart raises KeyError 'shipping_address': place_order sends carts with gift set to build_gift_order (lines 24\u201325), and line 16 succeeds before line 18 fails. Line 18 is the only place in v1.4.2 that still uses 'shipping_address'. In v1.4.1, make_cart and both readers all used that key.",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "code:checkout/orders.py:18@v1.4.2",
+     "detail": "build_gift_order reads cart[\"shipping_address\"], the old key. This is the line in the log traces.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/cart.py:7@v1.4.2",
+     "detail": "make_cart now stores the address under \"shipping\" and has no 'shipping_address' key, so line 18 raises KeyError.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/orders.py:10@v1.4.2",
+     "detail": "build_order was updated to cart[\"shipping\"], so non-gift orders still work and line 16 succeeds before line 18 fails.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/orders.py:24@v1.4.2",
+     "detail": "place_order sends carts with gift set to build_gift_order (line 25), so only gift orders fail.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/cart.py:7@v1.4.1",
+     "detail": "Before the deploy, make_cart stored 'shipping_address', and orders.py lines 10 and 18 both read it, so gift orders worked.",
+     "verified": true
+    },
+    {
+     "ref": "code:checkout/orders.py:18@v1.4.1",
+     "detail": "Line 18 is the same in v1.4.1; the rename in a41c9e2 broke it without touching it.",
+     "verified": true
+    },
+    {
+     "ref": "commit:a41c9e2",
+     "detail": "The rename to 'shipping' covered cart.py and build_order but missed build_gift_order. Searching v1.4.2 for 'shipping_address' finds only orders.py:18, so there are no other old-key users.",
+     "verified": true
+    },
+    {
+     "ref": "log:L0050",
+     "detail": "The logged KeyError 'shipping_address' at orders.py line 18 in build_gift_order matches the code.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  }
+ ],
+ "report": {
+  "root_cause": "Commit a41c9e2 in v1.4.2 renamed the cart key \"shipping_address\" to \"shipping\" in make_cart and updated build_order. It missed build_gift_order, which still reads cart[\"shipping_address\"] at checkout/orders.py:18. Every gift order now raises KeyError 'shipping_address' and returns a 500, while non-gift orders still work.",
+  "caused_by_deploy": true,
+  "suspected_commit": "a41c9e2",
+  "suspected_location": "checkout/orders.py:18",
+  "evidence": [
+   {
+    "ref": "metric:error_rate_pct",
+    "verified": true
+   },
+   {
+    "ref": "deploy:v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "metric:orders_per_min",
+    "verified": true
+   },
+   {
+    "ref": "note:N1",
+    "verified": true
+   },
+   {
+    "ref": "log:L0050",
+    "verified": true
+   },
+   {
+    "ref": "log:L0097",
+    "verified": true
+   },
+   {
+    "ref": "log:L0041",
+    "verified": true
+   },
+   {
+    "ref": "commit:a41c9e2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/orders.py:18@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/cart.py:7@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/orders.py:10@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/orders.py:24@v1.4.2",
+    "verified": true
+   },
+   {
+    "ref": "code:checkout/cart.py:7@v1.4.1",
+    "verified": true
+   },
+   {
+    "ref": "test:repro",
+    "verified": true
+   }
+  ],
+  "ruled_out": [
+   "Payment provider issues: payment timeouts stayed flat at 0.1\u20130.4/min, and PayFast timeout warnings retried successfully (metric:payment_timeouts_per_min, log:L0010).",
+   "Commit 7d03b5f: its double-applied percent coupon gives wrong, too-low totals but raises no exception (log:L0052); it is a separate bug that still needs a fix.",
+   "Commit c92e1aa: it only changes LOG_FORMAT and does not raise.",
+   "Config, infra or dependency changes: none were recorded around 14:10, and the only other deploy was v1.4.1 on 2026-11-05."
+  ],
+  "suggested_fix": "Change checkout/orders.py:18 to read cart[\"shipping\"] to match a41c9e2's rename, or roll back to v1.4.1 for immediate relief. Separately, fix the 7d03b5f coupon double-discount.",
+  "confidence": "high"
+ },
+ "verdict": "confirmed",
+ "verdictReason": "A test fails on v1.4.2 and passes on v1.4.1, and the report names a commit from the deploy.",
+ "delegations": 5,
+ "budget": 8,
+ "usage": null
+}

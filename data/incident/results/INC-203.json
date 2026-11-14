@@ -1,0 +1,200 @@
+{
+ "incidentId": "INC-203",
+ "mode": "replay",
+ "engine": "python",
+ "model": "claude-opus-5-5",
+ "incident": {
+  "id": "INC-203",
+  "title": "Payment timeouts spiking",
+  "teaser": "Looks like the deploy, but the timeouts started before it",
+  "opened": "2026-11-12T14:30:00Z",
+  "description": "Alert: payment timeouts above threshold; unpaid orders piling up. The v1.4.2 deploy went out at 14:10 UTC and the log format changed at the same time."
+ },
+ "steps": [
+  {
+   "n": 1,
+   "reasoning": "Payment timeouts reportedly began around the 14:10 deploy, but we haven't checked whether they actually started before or after it. Metrics should confirm the timing first.",
+   "action": "delegate",
+   "specialist": "metrics_analyst",
+   "task": "When did payment timeout rates and payment latency start rising relative to the v1.4.2 deploy at 2026-11-12T14:10:00Z? Report the onset time, how steep the rise was, and any other changes around then (traffic, payment provider latency, config changes). Use metrics, because the log format changed at 14:10 and log counts may not compare across that point.",
+   "ms": 0,
+   "by": "orchestrator"
+  },
+  {
+   "n": 2,
+   "reasoning": "Timeouts rose at 13:50, 20 minutes before the 14:10 deploy, and plateaued with no step at the deploy. This matches PayFast's reported us-east degradation since 13:50, so the cause is the external provider, not v1.4.2.",
+   "action": "conclude",
+   "specialist": null,
+   "task": "",
+   "ms": 0,
+   "by": "orchestrator"
+  }
+ ],
+ "findings": [
+  {
+   "specialist": "metrics_analyst",
+   "task": "When did payment timeout rates and payment latency start rising relative to the v1.4.2 deploy at 2026-11-12T14:10:00Z? Report the onset time, how steep the rise was, and any other changes around then (traffic, payment provider latency, config changes). Use metrics, because the log format changed at 14:10 and log counts may not compare across that point.",
+   "calls": [
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "list"
+     },
+     "result": "Unknown metric. Available: error_rate_pct, orders_per_min, avg_order_value_usd, payment_timeouts_per_min"
+    },
+    {
+     "tool": "get_deploys",
+     "args": {},
+     "result": "- v1.4.1 deployed 2026-11-05T15:30:00Z; commits: n/a\n- v1.4.2 deployed 2026-11-12T14:10:00Z; commits: a41c9e2, 7d03b5f, c92e1aa"
+    },
+    {
+     "tool": "get_notes",
+     "args": {},
+     "result": "N1 2026-11-12T14:02:00Z [vendor status page] PayFast: degraded performance in us-east. Elevated API latency and timeouts since 13:50 UTC. Investigating.\nN2 2026-11-12T14:26:00Z [on-call chat] Logs look different since the deploy (JSON now). Did the deploy break payments?"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "payment_timeouts_per_min"
+     },
+     "result": "payment_timeouts_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 0.14\n- 13:40\u201313:49 UTC: 0.16\n- 13:50\u201313:59 UTC: 2.73\n- 14:00\u201314:09 UTC: 3.57\n- 14:10\u201314:19 UTC: 3.57\n- 14:20\u201314:29 UTC: 3.59\n- 14:30\u201314:39 UTC: 3.50\n- 14:40\u201314:49 UTC: 3.40\n- 14:50\u201314:59 UTC: 3.56"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "error_rate_pct"
+     },
+     "result": "error_rate_pct, 10-minute averages:\n- 13:30\u201313:39 UTC: 0.21\n- 13:40\u201313:49 UTC: 0.12\n- 13:50\u201313:59 UTC: 2.26\n- 14:00\u201314:09 UTC: 2.83\n- 14:10\u201314:19 UTC: 2.89\n- 14:20\u201314:29 UTC: 2.71\n- 14:30\u201314:39 UTC: 2.79\n- 14:40\u201314:49 UTC: 2.93\n- 14:50\u201314:59 UTC: 2.77"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "orders_per_min"
+     },
+     "result": "orders_per_min, 10-minute averages:\n- 13:30\u201313:39 UTC: 20.04\n- 13:40\u201313:49 UTC: 19.99\n- 13:50\u201313:59 UTC: 20.07\n- 14:00\u201314:09 UTC: 19.90\n- 14:10\u201314:19 UTC: 19.52\n- 14:20\u201314:29 UTC: 20.25\n- 14:30\u201314:39 UTC: 19.62\n- 14:40\u201314:49 UTC: 19.84\n- 14:50\u201314:59 UTC: 20.16"
+    },
+    {
+     "tool": "get_metrics",
+     "args": {
+      "name": "avg_order_value_usd"
+     },
+     "result": "avg_order_value_usd, 10-minute averages:\n- 13:30\u201313:39 UTC: 74.31\n- 13:40\u201313:49 UTC: 73.70\n- 13:50\u201313:59 UTC: 74.00\n- 14:00\u201314:09 UTC: 74.69\n- 14:10\u201314:19 UTC: 73.92\n- 14:20\u201314:29 UTC: 74.73\n- 14:30\u201314:39 UTC: 73.44\n- 14:40\u201314:49 UTC: 74.06\n- 14:50\u201314:59 UTC: 74.39"
+    }
+   ],
+   "submitted": {
+    "summary": "Payment timeouts started rising in the 13:50\u201313:59 bucket, about 20 minutes before the v1.4.2 deploy at 14:10. They jumped sharply, from 0.16 to 2.73/min (about 17x), reached a plateau of about 3.57/min at 14:00\u201314:09, and stayed flat after the deploy. The timing matches PayFast's report of degraded us-east service since 13:50, so the deploy and the log-format change are unlikely to be the cause. No payment-latency metric exists, so I couldn't measure latency directly.",
+    "evidence": [
+     {
+      "ref": "metric:payment_timeouts_per_min",
+      "detail": "Timeouts were 0.14\u20130.16/min through 13:49, rose to 2.73 at 13:50\u201313:59 and 3.57 at 14:00\u201314:09, then held at 3.40\u20133.59 after 14:10, with no step at the deploy."
+     },
+     {
+      "ref": "metric:error_rate_pct",
+      "detail": "Error rate followed the same pattern: 0.12% at 13:40\u201313:49, 2.26% at 13:50\u201313:59 and 2.83% at 14:00\u201314:09, then 2.71\u20132.93% after the deploy, so the rise came before 14:10."
+     },
+     {
+      "ref": "note:N1",
+      "detail": "PayFast's status page (14:02) reports higher API latency and timeouts in us-east since 13:50 UTC, the same bucket where our metrics rise."
+     },
+     {
+      "ref": "metric:orders_per_min",
+      "detail": "Traffic stayed flat at about 19.5\u201320.3/min throughout, so a traffic surge is ruled out."
+     },
+     {
+      "ref": "metric:avg_order_value_usd",
+      "detail": "Average order value stayed flat at about $73\u201375, so there was no change in order mix."
+     },
+     {
+      "ref": "deploy:v1.4.2",
+      "detail": "The deploy at 14:10 came after the onset at 13:50 and produced no further step in any metric. No config-change record or payment-latency metric is available to check."
+     }
+    ],
+    "confidence": "high"
+   },
+   "summary": "Payment timeouts started rising in the 13:50\u201313:59 bucket, about 20 minutes before the v1.4.2 deploy at 14:10. They jumped sharply, from 0.16 to 2.73/min (about 17x), reached a plateau of about 3.57/min at 14:00\u201314:09, and stayed flat after the deploy. The timing matches PayFast's report of degraded us-east service since 13:50, so the deploy and the log-format change are unlikely to be the cause. No payment-latency metric exists, so I couldn't measure latency directly.",
+   "confidence": "high",
+   "evidence": [
+    {
+     "ref": "metric:payment_timeouts_per_min",
+     "detail": "Timeouts were 0.14\u20130.16/min through 13:49, rose to 2.73 at 13:50\u201313:59 and 3.57 at 14:00\u201314:09, then held at 3.40\u20133.59 after 14:10, with no step at the deploy.",
+     "verified": true
+    },
+    {
+     "ref": "metric:error_rate_pct",
+     "detail": "Error rate followed the same pattern: 0.12% at 13:40\u201313:49, 2.26% at 13:50\u201313:59 and 2.83% at 14:00\u201314:09, then 2.71\u20132.93% after the deploy, so the rise came before 14:10.",
+     "verified": true
+    },
+    {
+     "ref": "note:N1",
+     "detail": "PayFast's status page (14:02) reports higher API latency and timeouts in us-east since 13:50 UTC, the same bucket where our metrics rise.",
+     "verified": true
+    },
+    {
+     "ref": "metric:orders_per_min",
+     "detail": "Traffic stayed flat at about 19.5\u201320.3/min throughout, so a traffic surge is ruled out.",
+     "verified": true
+    },
+    {
+     "ref": "metric:avg_order_value_usd",
+     "detail": "Average order value stayed flat at about $73\u201375, so there was no change in order mix.",
+     "verified": true
+    },
+    {
+     "ref": "deploy:v1.4.2",
+     "detail": "The deploy at 14:10 came after the onset at 13:50 and produced no further step in any metric. No config-change record or payment-latency metric is available to check.",
+     "verified": true
+    }
+   ],
+   "ms": 0,
+   "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0
+   }
+  }
+ ],
+ "report": {
+  "root_cause": "Payment timeouts began rising at 13:50 UTC, about 20 minutes before the v1.4.2 deploy, and match PayFast's reported us-east API latency and timeout degradation since 13:50. The most likely cause is the external payment provider (PayFast) degradation, not our deploy. Timeouts plateaued at 14:00\u201314:09 and showed no additional step at 14:10.",
+  "caused_by_deploy": false,
+  "suspected_commit": null,
+  "suspected_location": null,
+  "evidence": [
+   {
+    "ref": "metric:payment_timeouts_per_min",
+    "verified": true
+   },
+   {
+    "ref": "metric:error_rate_pct",
+    "verified": true
+   },
+   {
+    "ref": "note:N1",
+    "verified": true
+   },
+   {
+    "ref": "metric:orders_per_min",
+    "verified": true
+   },
+   {
+    "ref": "metric:avg_order_value_usd",
+    "verified": true
+   },
+   {
+    "ref": "deploy:v1.4.2",
+    "verified": true
+   }
+  ],
+  "ruled_out": [
+   "The v1.4.2 deploy is ruled out as the trigger because timeouts and error rate rose at 13:50, before the 14:10 deploy, with no further step afterward.",
+   "The log-format change is ruled out as an artifact because the rise appears in metrics, not just log counts, and predates 14:10.",
+   "A traffic surge is ruled out because orders per minute stayed flat at about 19.5\u201320.3/min.",
+   "A change in order mix is ruled out because average order value stayed flat at about $73\u201375."
+  ],
+  "suggested_fix": "Treat this as a PayFast us-east incident: track the provider status, consider failover to another region or provider or extended retry/backoff if available, and reconcile unpaid orders once PayFast recovers. No rollback of v1.4.2 is indicated, though config changes could not be checked because no record was available.",
+  "confidence": "medium"
+ },
+ "verdict": "not_caused_by_deploy",
+ "verdictReason": "The evidence points away from the deploy, and no test showed a regression.",
+ "delegations": 1,
+ "budget": 8,
+ "usage": null
+}

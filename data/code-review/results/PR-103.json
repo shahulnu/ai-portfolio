@@ -488,7 +488,7 @@
     },
     {
       "node": "review:tests",
-      "ms": 1,
+      "ms": 0,
       "detail": "0 finding(s). Loaded recorded live output"
     },
     {

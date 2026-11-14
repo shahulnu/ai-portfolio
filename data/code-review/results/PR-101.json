@@ -280,17 +280,17 @@
     },
     {
       "node": "review:correctness",
-      "ms": 1,
+      "ms": 0,
       "detail": "2 finding(s). Loaded recorded live output"
     },
     {
       "node": "review:security",
-      "ms": 1,
+      "ms": 0,
       "detail": "2 finding(s). Loaded recorded live output"
     },
     {
       "node": "review:tests",
-      "ms": 1,
+      "ms": 0,
       "detail": "1 finding(s). Loaded recorded live output"
     },
     {

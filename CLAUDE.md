@@ -47,6 +47,7 @@ Domain notes: PA follows a fixed workflow with CMS-0057-F decision deadlines. Ap
 - Code Review Agent (`/apps/code-review-agent`): the engine is a Python LangGraph + LangChain FastAPI service in `../langgraph-dev-agents` (port 8090). This site has no TypeScript engine for it.
 - Replay serves `data/code-review/results/*.json`, exported by `uv run python scripts/export_site.py` in that repo, so Vercel needs no Python host. Setting `CODE_REVIEW_ENGINE_URL` forwards to the service for live runs.
 - Source links for Python demos come from `PYTHON_CODE_PATHS` in `site.ts`.
+- Incident Debugger (`/apps/incident-debugger`): same Python service (port 8090), multi-agent orchestrator. Replay serves `data/incident/results/*.json`, exported by the same `export_site.py`; `INCIDENT_ENGINE_URL` forwards for live runs.
 
 ## Python payer agents (`../payer-ai-agents`)
 - Fax Intake Agent (`/apps/fax-intake-agent`, Healthcare payer group): Python LangGraph + LangChain + MCP FastAPI service (port 8091). Reads image-only fax PDFs, verifies through a mock payer-systems MCP server, pauses for human approval (LangGraph interrupt), then writes.
