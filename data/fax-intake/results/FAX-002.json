@@ -1,0 +1,455 @@
+{
+  "paused": {
+    "faxId": "FAX-002",
+    "status": "awaiting_approval",
+    "mode": "replay",
+    "engine": "python",
+    "model": "claude-opus-5-5",
+    "fax": {
+      "id": "FAX-002",
+      "title": "MRI for a lapsed member",
+      "teaser": "Coverage ended before the date of service",
+      "receivedAt": "2026-11-16T10:47:00Z",
+      "fromFax": "(555) 318-2207",
+      "sender": "Northgate Family Practice"
+    },
+    "extraction": {
+      "member_name": {
+        "value": "Thomas Reed",
+        "as_written": "Thomas Reed",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_id": {
+        "value": "M-30244",
+        "as_written": "M-30244",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_dob": {
+        "value": "1958-09-03",
+        "as_written": "09/03/1958",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_name": {
+        "value": "Helen Ward, MD",
+        "as_written": "Helen Ward, MD",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_npi": {
+        "value": "1765432103",
+        "as_written": "1765432103",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_code": {
+        "value": "72148",
+        "as_written": "72148",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_description": {
+        "value": "MRI lumbar spine without contrast",
+        "as_written": "MRI lumbar spine without contrast",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "diagnosis_codes": {
+        "value": "M54.50, M51.36",
+        "as_written": "M54.50, M51.36",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "date_of_service": {
+        "value": "2026-11-20",
+        "as_written": "11/20/2026",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "urgency": {
+        "value": "standard",
+        "as_written": "Standard (checked)",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "signature": {
+        "value": "present",
+        "as_written": "Helen Ward",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "clinical_summary": "Thomas Reed has had chronic low back pain for 6 months, worse over the last 4 weeks, despite completing 12 sessions of physical therapy and anti-inflammatories. Exam shows tenderness at L4-L5 with normal strength and reflexes, and a lumbar spine MRI without contrast (72148) is requested to guide referral to spine surgery.",
+      "instructions_to_automation": []
+    },
+    "issues": [],
+    "lookups": [
+      {
+        "tool": "find_member",
+        "args": {
+          "member_id": "M-30244"
+        },
+        "result": {
+          "found": true,
+          "id": "M-30244",
+          "name": "Thomas Reed",
+          "dob": "1958-09-03",
+          "plan": "Commercial HMO (sample)",
+          "coverage": {
+            "start": "2023-01-01",
+            "end": "2026-09-30"
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "check_eligibility",
+        "args": {
+          "member_id": "M-30244",
+          "date_of_service": "2026-11-20"
+        },
+        "result": {
+          "eligible": false,
+          "reason": "Coverage ended 2026-09-30.",
+          "coverage": {
+            "start": "2023-01-01",
+            "end": "2026-09-30"
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "verify_provider",
+        "args": {
+          "npi": "1765432103"
+        },
+        "result": {
+          "found": true,
+          "npi": "1765432103",
+          "name": "Helen Ward, MD",
+          "practice": "Northgate Family Practice",
+          "specialty": "Family Medicine",
+          "network": "in"
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "find_policy",
+        "args": {
+          "service_code": "72148"
+        },
+        "result": {
+          "found": true,
+          "id": "DEMO-IMG-014",
+          "title": "MRI of the lumbar spine for low back pain",
+          "codes": [
+            "72148",
+            "72149",
+            "72158"
+          ],
+          "requiresAuth": true
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      }
+    ],
+    "agentSummary": "The member isn't eligible on the date of service: Thomas Reed's coverage ended 2026-09-30, but the MRI is scheduled for 2026-11-20.\n\nThe member record matches the fax on name, date of birth and ID (M-30244, Commercial HMO). Dr. Helen Ward (NPI 1765432103) is in network at Northgate Family Practice. Code 72148 falls under policy DEMO-IMG-014 (lumbar spine MRI for low back pain), and that policy requires prior authorization.\n\nSomeone needs to confirm whether he has new or renewed coverage, or whether the service date is wrong, before a case is opened.",
+    "route": "eligibility_review",
+    "routeReason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30.",
+    "actions": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "eligibility-review",
+          "source_fax_id": "FAX-002",
+          "reason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30."
+        }
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "$previous.itemId",
+          "source_fax_id": "FAX-002"
+        }
+      }
+    ],
+    "decision": null,
+    "results": [],
+    "trace": [
+      {
+        "node": "read_fax",
+        "ms": 0,
+        "detail": "9 of 9 required fields clear; 0 issue(s). Loaded recorded live reading"
+      },
+      {
+        "node": "look_up",
+        "ms": 0,
+        "detail": "4 tool call(s) by the agent, 0 added by code"
+      },
+      {
+        "node": "decide",
+        "ms": 0,
+        "detail": "eligibility_review; 2 write(s) proposed"
+      }
+    ],
+    "usage": null
+  },
+  "approved": {
+    "faxId": "FAX-002",
+    "status": "completed",
+    "mode": "replay",
+    "engine": "python",
+    "model": "claude-opus-5-5",
+    "fax": {
+      "id": "FAX-002",
+      "title": "MRI for a lapsed member",
+      "teaser": "Coverage ended before the date of service",
+      "receivedAt": "2026-11-16T10:47:00Z",
+      "fromFax": "(555) 318-2207",
+      "sender": "Northgate Family Practice"
+    },
+    "extraction": {
+      "member_name": {
+        "value": "Thomas Reed",
+        "as_written": "Thomas Reed",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_id": {
+        "value": "M-30244",
+        "as_written": "M-30244",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_dob": {
+        "value": "1958-09-03",
+        "as_written": "09/03/1958",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_name": {
+        "value": "Helen Ward, MD",
+        "as_written": "Helen Ward, MD",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_npi": {
+        "value": "1765432103",
+        "as_written": "1765432103",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_code": {
+        "value": "72148",
+        "as_written": "72148",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_description": {
+        "value": "MRI lumbar spine without contrast",
+        "as_written": "MRI lumbar spine without contrast",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "diagnosis_codes": {
+        "value": "M54.50, M51.36",
+        "as_written": "M54.50, M51.36",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "date_of_service": {
+        "value": "2026-11-20",
+        "as_written": "11/20/2026",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "urgency": {
+        "value": "standard",
+        "as_written": "Standard (checked)",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "signature": {
+        "value": "present",
+        "as_written": "Helen Ward",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "clinical_summary": "Thomas Reed has had chronic low back pain for 6 months, worse over the last 4 weeks, despite completing 12 sessions of physical therapy and anti-inflammatories. Exam shows tenderness at L4-L5 with normal strength and reflexes, and a lumbar spine MRI without contrast (72148) is requested to guide referral to spine surgery.",
+      "instructions_to_automation": []
+    },
+    "issues": [],
+    "lookups": [
+      {
+        "tool": "find_member",
+        "args": {
+          "member_id": "M-30244"
+        },
+        "result": {
+          "found": true,
+          "id": "M-30244",
+          "name": "Thomas Reed",
+          "dob": "1958-09-03",
+          "plan": "Commercial HMO (sample)",
+          "coverage": {
+            "start": "2023-01-01",
+            "end": "2026-09-30"
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "check_eligibility",
+        "args": {
+          "member_id": "M-30244",
+          "date_of_service": "2026-11-20"
+        },
+        "result": {
+          "eligible": false,
+          "reason": "Coverage ended 2026-09-30.",
+          "coverage": {
+            "start": "2023-01-01",
+            "end": "2026-09-30"
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "verify_provider",
+        "args": {
+          "npi": "1765432103"
+        },
+        "result": {
+          "found": true,
+          "npi": "1765432103",
+          "name": "Helen Ward, MD",
+          "practice": "Northgate Family Practice",
+          "specialty": "Family Medicine",
+          "network": "in"
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "find_policy",
+        "args": {
+          "service_code": "72148"
+        },
+        "result": {
+          "found": true,
+          "id": "DEMO-IMG-014",
+          "title": "MRI of the lumbar spine for low back pain",
+          "codes": [
+            "72148",
+            "72149",
+            "72158"
+          ],
+          "requiresAuth": true
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      }
+    ],
+    "agentSummary": "The member isn't eligible on the date of service: Thomas Reed's coverage ended 2026-09-30, but the MRI is scheduled for 2026-11-20.\n\nThe member record matches the fax on name, date of birth and ID (M-30244, Commercial HMO). Dr. Helen Ward (NPI 1765432103) is in network at Northgate Family Practice. Code 72148 falls under policy DEMO-IMG-014 (lumbar spine MRI for low back pain), and that policy requires prior authorization.\n\nSomeone needs to confirm whether he has new or renewed coverage, or whether the service date is wrong, before a case is opened.",
+    "route": "eligibility_review",
+    "routeReason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30.",
+    "actions": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "eligibility-review",
+          "source_fax_id": "FAX-002",
+          "reason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30."
+        }
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "$previous.itemId",
+          "source_fax_id": "FAX-002"
+        }
+      }
+    ],
+    "decision": {
+      "approved": true,
+      "reviewer": "demo reviewer",
+      "at": null
+    },
+    "results": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "eligibility-review",
+          "source_fax_id": "FAX-002",
+          "reason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30."
+        },
+        "result": {
+          "itemId": "Q-ELIGIBILITY-00201",
+          "queue": "eligibility-review",
+          "sourceFaxId": "FAX-002",
+          "reason": "Not eligible on 2026-11-20: Coverage ended 2026-09-30.",
+          "status": "open"
+        },
+        "by": "code",
+        "ms": 0
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "Q-ELIGIBILITY-00201",
+          "source_fax_id": "FAX-002"
+        },
+        "result": {
+          "attached": true,
+          "recordId": "Q-ELIGIBILITY-00201",
+          "document": "FAX-002.pdf",
+          "attachmentId": "DOC-001"
+        },
+        "by": "code",
+        "ms": 0
+      }
+    ],
+    "trace": [
+      {
+        "node": "read_fax",
+        "ms": 0,
+        "detail": "9 of 9 required fields clear; 0 issue(s). Loaded recorded live reading"
+      },
+      {
+        "node": "look_up",
+        "ms": 0,
+        "detail": "4 tool call(s) by the agent, 0 added by code"
+      },
+      {
+        "node": "decide",
+        "ms": 0,
+        "detail": "eligibility_review; 2 write(s) proposed"
+      },
+      {
+        "node": "approve",
+        "ms": 0,
+        "detail": "Approved by demo reviewer"
+      },
+      {
+        "node": "act",
+        "ms": 0,
+        "detail": "2 write(s) made after approval"
+      }
+    ],
+    "usage": null
+  }
+}

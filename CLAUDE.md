@@ -48,6 +48,10 @@ Domain notes: PA follows a fixed workflow with CMS-0057-F decision deadlines. Ap
 - Replay serves `data/code-review/results/*.json`, exported by `uv run python scripts/export_site.py` in that repo, so Vercel needs no Python host. Setting `CODE_REVIEW_ENGINE_URL` forwards to the service for live runs.
 - Source links for Python demos come from `PYTHON_CODE_PATHS` in `site.ts`.
 
+## Python payer agents (`../payer-ai-agents`)
+- Fax Intake Agent (`/apps/fax-intake-agent`, Healthcare payer group): Python LangGraph + LangChain + MCP FastAPI service (port 8091). Reads image-only fax PDFs, verifies through a mock payer-systems MCP server, pauses for human approval (LangGraph interrupt), then writes.
+- Replay serves `data/fax-intake/results/*.json` (each with a `paused` and an `approved` run) and fax page images in `public/fax-intake/`, exported by that repo's `scripts/export_site.py` and `scripts/make_faxes.py --site`. `FAX_INTAKE_ENGINE_URL` forwards to the service for live runs; `/api/fax-intake/approve` resumes a paused run.
+
 ## Standing rules from the owner
 - The public site (Vercel) runs **key-off**: no `ANTHROPIC_API_KEY` there, so it's replay only.
 - **Don't commit or push to git until asked.**
@@ -58,4 +62,3 @@ Domain notes: PA follows a fixed workflow with CMS-0057-F decision deadlines. Ap
 - Verify `data/hcc/hcc-map.json` against the official CMS V28 mappings (I63.9 → HCC 249 is unconfirmed).
 - Check employer rules about naming the client (About and `public/resume.pdf` describe clients by industry until then); register `shahulnu.dev` and point it at Vercel; set JAVA_HOME.
 - `public/resume.pdf` is the public copy of the resume: no phone number, clients described by industry. When the resume changes, replace it and keep the About page's career timeline and credentials in step with it.
-- Put both projects on GitHub as separate repos when ready.

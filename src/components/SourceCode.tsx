@@ -59,7 +59,7 @@ export function SourceCode({ slug }: { slug: string }) {
 /** Source links for a demo whose engine is the Python LangGraph service. */
 function PythonSourceCode({ slug }: { slug: string }) {
   const p = PYTHON_CODE_PATHS[slug];
-  const py = `${SITE.repos.devAgents}/tree/main`;
+  const py = `${SITE.repos[p.repo]}/tree/main`;
   const site = `${SITE.repos.site}/tree/main`;
   return (
     <section className="section" id="code">
@@ -76,11 +76,15 @@ function PythonSourceCode({ slug }: { slug: string }) {
           <h3>Python (LangGraph)</h3>
           <ul>
             <li>
-              <a href={`${py}/${p.package}`}>Graph, reviewers and checks</a>: the StateGraph, the Claude calls and the
-              code that verifies findings
+              <a href={`${py}/${p.package}`}>The graph</a>: the StateGraph, the Claude calls and the code checks
             </li>
+            {p.extra && (
+              <li>
+                <a href={`${py}/${p.extra.path}`}>{p.extra.label}</a>
+              </li>
+            )}
             <li>
-              <a href={`${py}/${p.data}`}>Synthetic pull requests</a> and recorded runs
+              <a href={`${py}/${p.data}`}>Synthetic data</a> and recorded runs
             </li>
             <li>
               <a href={`${py}/evals`}>Labels and eval results</a>, <a href={`${py}/tests`}>unit tests</a>

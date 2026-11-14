@@ -15,6 +15,7 @@ export const SITE = {
     site: "https://github.com/shahulnu/ai-portfolio",
     services: "https://github.com/shahulnu/healthcare-payer-ai-services",
     devAgents: "https://github.com/shahulnu/langgraph-dev-agents",
+    payerAgents: "https://github.com/shahulnu/payer-ai-agents",
   },
 };
 
@@ -27,9 +28,10 @@ export const CODE_PATHS: Record<string, { engine: string; java: string }> = {
   "hcc-evidence-finder": { engine: "hcc", java: "hcc-engine-java" },
 };
 
-/** Developer tools demos whose engine is the Python LangGraph service, by app slug. */
-export const PYTHON_CODE_PATHS: Record<string, { package: string; data: string; api: string }> = {
-  "code-review-agent": { package: "app/code_review", data: "data/code-review", api: "code-review" },
+/** Demos whose engine is a Python LangGraph service, by app slug: which repo, and where in it. */
+export const PYTHON_CODE_PATHS: Record<string, { repo: "devAgents" | "payerAgents"; package: string; data: string; api: string; extra?: { label: string; path: string } }> = {
+  "code-review-agent": { repo: "devAgents", package: "app/code_review", data: "data/code-review", api: "code-review" },
+  "fax-intake-agent": { repo: "payerAgents", package: "app/fax_intake", data: "data/fax-intake", api: "fax-intake", extra: { label: "MCP server", path: "app/payer_mcp" } },
 };
 
 export interface AppEntry {
@@ -90,6 +92,15 @@ export const APPS: AppEntry[] = [
     area: "Risk adjustment",
     technique: "MEAT evidence review with code-owned HCC rules",
     blurb: "Compares charts with submitted codes in both directions: missed conditions with MEAT evidence, and unsupported codes to review before a RADV audit.",
+    status: "live",
+    group: "payer",
+  },
+  {
+    slug: "fax-intake-agent",
+    name: "Fax Intake Agent",
+    area: "Utilization management intake",
+    technique: "PDF reading, MCP tools and human approval in LangGraph",
+    blurb: "Reads a scanned prior authorization fax, checks every field, verifies it through MCP tools, and creates the case only after a person approves.",
     status: "live",
     group: "payer",
   },

@@ -1,0 +1,441 @@
+{
+  "paused": {
+    "faxId": "FAX-003",
+    "status": "awaiting_approval",
+    "mode": "replay",
+    "engine": "python",
+    "model": "claude-opus-5-5",
+    "fax": {
+      "id": "FAX-003",
+      "title": "Knee replacement, poor scan",
+      "teaser": "A smudged NPI and no signature: needs a person",
+      "receivedAt": "2026-11-16T13:05:00Z",
+      "fromFax": "(555) 640-7781",
+      "sender": "Riverside Orthopedics"
+    },
+    "extraction": {
+      "member_name": {
+        "value": "Linda Park",
+        "as_written": "Linda Park",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_id": {
+        "value": "M-30388",
+        "as_written": "M-30388",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_dob": {
+        "value": "1963-02-27",
+        "as_written": "02/27/1963",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_name": {
+        "value": "Daniel Okafor, MD",
+        "as_written": "Daniel Okafor, MD",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_npi": {
+        "value": null,
+        "as_written": "19876",
+        "page": 1,
+        "legibility": "unclear"
+      },
+      "service_code": {
+        "value": "27447",
+        "as_written": "27447",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_description": {
+        "value": "Total knee arthroplasty, right",
+        "as_written": "Total knee arthroplasty, right",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "diagnosis_codes": {
+        "value": "M17.11",
+        "as_written": "M17.11",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "date_of_service": {
+        "value": "2026-12-08",
+        "as_written": "12/08/2026",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "urgency": {
+        "value": "standard",
+        "as_written": "Standard (checked)",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "signature": {
+        "value": "absent",
+        "as_written": "",
+        "page": 1,
+        "legibility": "missing"
+      },
+      "clinical_summary": "Patient has severe right knee osteoarthritis (Kellgren-Lawrence grade 4 on standing X-ray) with pain limiting walking to one block and stair climbing, despite 6 months of physical therapy, NSAIDs and two steroid injections. BMI is 31 with no signs of infection, and the plan is a right total knee arthroplasty (CPT 27447).",
+      "instructions_to_automation": []
+    },
+    "issues": [
+      {
+        "field": "provider_npi",
+        "message": "Not clearly readable (reads as \"19876\").",
+        "blocking": true
+      },
+      {
+        "field": "signature",
+        "message": "The provider attestation isn't signed.",
+        "blocking": true
+      }
+    ],
+    "lookups": [
+      {
+        "tool": "find_member",
+        "args": {
+          "member_id": "M-30388"
+        },
+        "result": {
+          "found": true,
+          "id": "M-30388",
+          "name": "Linda Park",
+          "dob": "1963-02-27",
+          "plan": "Medicare Advantage PPO (sample)",
+          "coverage": {
+            "start": "2024-01-01",
+            "end": null
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "check_eligibility",
+        "args": {
+          "member_id": "M-30388",
+          "date_of_service": "2026-12-08"
+        },
+        "result": {
+          "eligible": true,
+          "reason": "Active coverage on the date of service.",
+          "plan": "Medicare Advantage PPO (sample)",
+          "coverage": {
+            "start": "2024-01-01",
+            "end": null
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "find_policy",
+        "args": {
+          "service_code": "27447"
+        },
+        "result": {
+          "found": true,
+          "id": "DEMO-ORT-007",
+          "title": "Total knee arthroplasty",
+          "codes": [
+            "27447"
+          ],
+          "requiresAuth": true
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      }
+    ],
+    "agentSummary": "**Matched:** Member M-30388 is Linda Park, and the date of birth (1963-02-27) matches the fax. She has active Medicare Advantage PPO coverage on 2026-12-08, and code 27447 (total knee arthroplasty) falls under policy DEMO-ORT-007, which requires prior authorization.\n\n**Not checked:** I didn't verify the provider. The NPI on the fax can't be read clearly (it looks like \"19876\", which is too short to be a valid 10-digit NPI), so I didn't look it up or guess it. Dr. Daniel Okafor's identity and network status are still unconfirmed.\n\n**Needs a person:** Someone should get the correct NPI and a signed provider attestation from Dr. Okafor's office before this case moves forward.",
+    "route": "manual_intake",
+    "routeReason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed.",
+    "actions": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "manual-intake",
+          "source_fax_id": "FAX-003",
+          "reason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed."
+        }
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "$previous.itemId",
+          "source_fax_id": "FAX-003"
+        }
+      }
+    ],
+    "decision": null,
+    "results": [],
+    "trace": [
+      {
+        "node": "read_fax",
+        "ms": 0,
+        "detail": "8 of 9 required fields clear; 2 issue(s). Loaded recorded live reading"
+      },
+      {
+        "node": "look_up",
+        "ms": 0,
+        "detail": "3 tool call(s) by the agent, 0 added by code"
+      },
+      {
+        "node": "decide",
+        "ms": 0,
+        "detail": "manual_intake; 2 write(s) proposed"
+      }
+    ],
+    "usage": null
+  },
+  "approved": {
+    "faxId": "FAX-003",
+    "status": "completed",
+    "mode": "replay",
+    "engine": "python",
+    "model": "claude-opus-5-5",
+    "fax": {
+      "id": "FAX-003",
+      "title": "Knee replacement, poor scan",
+      "teaser": "A smudged NPI and no signature: needs a person",
+      "receivedAt": "2026-11-16T13:05:00Z",
+      "fromFax": "(555) 640-7781",
+      "sender": "Riverside Orthopedics"
+    },
+    "extraction": {
+      "member_name": {
+        "value": "Linda Park",
+        "as_written": "Linda Park",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_id": {
+        "value": "M-30388",
+        "as_written": "M-30388",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "member_dob": {
+        "value": "1963-02-27",
+        "as_written": "02/27/1963",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_name": {
+        "value": "Daniel Okafor, MD",
+        "as_written": "Daniel Okafor, MD",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "provider_npi": {
+        "value": null,
+        "as_written": "19876",
+        "page": 1,
+        "legibility": "unclear"
+      },
+      "service_code": {
+        "value": "27447",
+        "as_written": "27447",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "service_description": {
+        "value": "Total knee arthroplasty, right",
+        "as_written": "Total knee arthroplasty, right",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "diagnosis_codes": {
+        "value": "M17.11",
+        "as_written": "M17.11",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "date_of_service": {
+        "value": "2026-12-08",
+        "as_written": "12/08/2026",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "urgency": {
+        "value": "standard",
+        "as_written": "Standard (checked)",
+        "page": 1,
+        "legibility": "clear"
+      },
+      "signature": {
+        "value": "absent",
+        "as_written": "",
+        "page": 1,
+        "legibility": "missing"
+      },
+      "clinical_summary": "Patient has severe right knee osteoarthritis (Kellgren-Lawrence grade 4 on standing X-ray) with pain limiting walking to one block and stair climbing, despite 6 months of physical therapy, NSAIDs and two steroid injections. BMI is 31 with no signs of infection, and the plan is a right total knee arthroplasty (CPT 27447).",
+      "instructions_to_automation": []
+    },
+    "issues": [
+      {
+        "field": "provider_npi",
+        "message": "Not clearly readable (reads as \"19876\").",
+        "blocking": true
+      },
+      {
+        "field": "signature",
+        "message": "The provider attestation isn't signed.",
+        "blocking": true
+      }
+    ],
+    "lookups": [
+      {
+        "tool": "find_member",
+        "args": {
+          "member_id": "M-30388"
+        },
+        "result": {
+          "found": true,
+          "id": "M-30388",
+          "name": "Linda Park",
+          "dob": "1963-02-27",
+          "plan": "Medicare Advantage PPO (sample)",
+          "coverage": {
+            "start": "2024-01-01",
+            "end": null
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "check_eligibility",
+        "args": {
+          "member_id": "M-30388",
+          "date_of_service": "2026-12-08"
+        },
+        "result": {
+          "eligible": true,
+          "reason": "Active coverage on the date of service.",
+          "plan": "Medicare Advantage PPO (sample)",
+          "coverage": {
+            "start": "2024-01-01",
+            "end": null
+          }
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      },
+      {
+        "tool": "find_policy",
+        "args": {
+          "service_code": "27447"
+        },
+        "result": {
+          "found": true,
+          "id": "DEMO-ORT-007",
+          "title": "Total knee arthroplasty",
+          "codes": [
+            "27447"
+          ],
+          "requiresAuth": true
+        },
+        "by": "agent",
+        "ms": 0,
+        "matchesFax": true
+      }
+    ],
+    "agentSummary": "**Matched:** Member M-30388 is Linda Park, and the date of birth (1963-02-27) matches the fax. She has active Medicare Advantage PPO coverage on 2026-12-08, and code 27447 (total knee arthroplasty) falls under policy DEMO-ORT-007, which requires prior authorization.\n\n**Not checked:** I didn't verify the provider. The NPI on the fax can't be read clearly (it looks like \"19876\", which is too short to be a valid 10-digit NPI), so I didn't look it up or guess it. Dr. Daniel Okafor's identity and network status are still unconfirmed.\n\n**Needs a person:** Someone should get the correct NPI and a signed provider attestation from Dr. Okafor's office before this case moves forward.",
+    "route": "manual_intake",
+    "routeReason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed.",
+    "actions": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "manual-intake",
+          "source_fax_id": "FAX-003",
+          "reason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed."
+        }
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "$previous.itemId",
+          "source_fax_id": "FAX-003"
+        }
+      }
+    ],
+    "decision": {
+      "approved": true,
+      "reviewer": "demo reviewer",
+      "at": null
+    },
+    "results": [
+      {
+        "tool": "route_to_queue",
+        "args": {
+          "queue": "manual-intake",
+          "source_fax_id": "FAX-003",
+          "reason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed."
+        },
+        "result": {
+          "itemId": "Q-MANUAL-00301",
+          "queue": "manual-intake",
+          "sourceFaxId": "FAX-003",
+          "reason": "provider_npi: Not clearly readable (reads as \"19876\").; signature: The provider attestation isn't signed.",
+          "status": "open"
+        },
+        "by": "code",
+        "ms": 0
+      },
+      {
+        "tool": "attach_document",
+        "args": {
+          "record_id": "Q-MANUAL-00301",
+          "source_fax_id": "FAX-003"
+        },
+        "result": {
+          "attached": true,
+          "recordId": "Q-MANUAL-00301",
+          "document": "FAX-003.pdf",
+          "attachmentId": "DOC-001"
+        },
+        "by": "code",
+        "ms": 0
+      }
+    ],
+    "trace": [
+      {
+        "node": "read_fax",
+        "ms": 0,
+        "detail": "8 of 9 required fields clear; 2 issue(s). Loaded recorded live reading"
+      },
+      {
+        "node": "look_up",
+        "ms": 0,
+        "detail": "3 tool call(s) by the agent, 0 added by code"
+      },
+      {
+        "node": "decide",
+        "ms": 0,
+        "detail": "manual_intake; 2 write(s) proposed"
+      },
+      {
+        "node": "approve",
+        "ms": 0,
+        "detail": "Approved by demo reviewer"
+      },
+      {
+        "node": "act",
+        "ms": 0,
+        "detail": "2 write(s) made after approval"
+      }
+    ],
+    "usage": null
+  }
+}
