@@ -2,9 +2,11 @@
 
 export const SITE = {
   name: "Shahul Ummarali",
-  title: "Software Architect · Healthcare Payer AI",
-  domain: "shahul.ai",
-  email: "ShahulHameed.NU@gmail.com",
+  fullName: "Shahul Hameed Ummarali",
+  title: "Solutions & AI Systems Architect · Healthcare Payer AI",
+  domain: "shahulnu.dev",
+  location: "Mississauga, ON, Canada",
+  email: "shahulhameed.nu@gmail.com",
   linkedin: "https://www.linkedin.com/in/shahulnu",
   github: "https://github.com/shahulnu",
   resumeUrl: "/resume.pdf",

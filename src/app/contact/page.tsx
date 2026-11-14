@@ -17,8 +17,10 @@ export default function ContactPage() {
         </div>
         <CopyText text={SITE.email} />
         <p>
-          <a href={SITE.linkedin}>LinkedIn</a> · <a href={SITE.github}>GitHub</a>
+          <a href={SITE.linkedin}>LinkedIn</a> · <a href={SITE.github}>GitHub</a> ·{" "}
+          <a href={SITE.resumeUrl}>Resume (PDF)</a>
         </p>
+        <p className="muted small">Based in {SITE.location}.</p>
       </section>
     </div>
   );

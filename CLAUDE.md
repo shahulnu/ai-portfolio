@@ -50,5 +50,6 @@ Domain notes: PA follows a fixed workflow with CMS-0057-F decision deadlines. Ap
 
 ## Open to-dos (owner's)
 - Verify `data/hcc/hcc-map.json` against the official CMS V28 mappings (I63.9 → HCC 249 is unconfirmed).
-- Add `public/resume.pdf`; add measurable career highlights on About; check employer rules about naming the client; set the real domain (`shahul.ai` is a placeholder); set JAVA_HOME.
+- Check employer rules about naming the client (About and `public/resume.pdf` describe clients by industry until then); register `shahulnu.dev` and point it at Vercel; set JAVA_HOME.
+- `public/resume.pdf` is the public copy of the resume: no phone number, clients described by industry. When the resume changes, replace it and keep the About page's career timeline and credentials in step with it.
 - Put both projects on GitHub as separate repos when ready.

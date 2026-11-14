@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <div className="wrap">
             <Link href="/" className="brand">
-              {SITE.name} <span>· AI Architecture</span>
+              {SITE.name} <span>· AI Systems Architect</span>
             </Link>
             <nav className="site-nav" aria-label="Main">
               <Link href="/apps">Apps</Link>

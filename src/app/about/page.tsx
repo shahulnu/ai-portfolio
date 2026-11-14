@@ -3,45 +3,56 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "About" };
 
-// Career history from the LinkedIn Experience section. Employers are named; clients
-// are described by industry. LinkedIn lists no achievements for these roles, so the
-// highlights stick to scope. Add measurable outcomes as you document them.
+// Career history from the resume (public/resume.pdf). Employers are named; clients
+// are described by industry until the owner has checked Cognizant's rules on naming them.
 const CAREER = [
   {
-    years: "2022–now",
-    role: "Senior Software Architect",
+    years: "2020–now",
+    role: "Solutions Architect",
     org: "Cognizant",
-    place: "Toronto, Canada · Remote",
-    highlights: "Architecture for a U.S. healthcare payer client, focused on digital transformation and cloud migration.",
+    place: "Mississauga, Canada · Remote",
+    highlights:
+      "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure, and designed and delivered an Azure OpenAI solution that reads employer group documents and processes the actions in them. Leads a 40-person team across India, Canada and the United States.",
   },
   {
-    years: "2017–2022",
+    years: "2018–2020",
     role: "Software Architect",
     org: "Cognizant",
-    place: "United States · On-site",
-    highlights: "Solution architecture for enterprise Java EE systems, working on-site with U.S. clients.",
+    place: "Herndon, VA, United States",
+    highlights:
+      "Architected a digital platform for a U.S. mortgage finance client's next-generation bond offerings, automating bond offer processing and reporting.",
   },
   {
-    years: "2012–2017",
-    role: "Senior Associate, Lead Developer",
+    years: "2012–2018",
+    role: "Lead Developer",
     org: "Cognizant",
-    place: "United States · On-site",
-    highlights: "Led development of enterprise Java applications for U.S. clients.",
+    place: "Chennai, India · United States",
+    highlights: "Led the development team for the same health plan's member, provider, employer and broker portals.",
   },
   {
     years: "2010–2012",
-    role: "Senior Software Developer",
+    role: "Software Engineer",
     org: "Royal Bank of Scotland",
     place: "Chennai, India",
-    highlights: "Java EE development for banking systems.",
+    highlights:
+      "Designed and developed Online Client Services, a self-service portal where corporate clients view accounts, contracts, transactions and balances and raise service requests.",
   },
   {
     years: "2006–2010",
-    role: "Associate Consultant, Software Developer",
+    role: "Associate Consultant",
     org: "Capgemini",
-    place: "Chennai, India · Oslo, Norway",
-    highlights: "Java EE and Spring development, including an on-site assignment in Oslo.",
+    place: "Pune, India · Oslo, Norway",
+    highlights:
+      "Developed a regulatory reporting system for a global investment bank, then a next-generation credit bureau system on-site in Oslo for a Norwegian credit information company.",
   },
+];
+
+const CREDENTIALS = [
+  { name: "Post Graduate Program in Artificial Intelligence and Machine Learning", from: "Purdue University" },
+  { name: "Bachelor of Technology, Computer Science and Engineering", from: "Calicut University" },
+  { name: "Claude Certified Architect – Foundations", from: "Anthropic" },
+  { name: "Microsoft Certified: Azure Fundamentals", from: "Microsoft" },
+  { name: "Generative AI Overview for Project Managers", from: "Project Management Institute" },
 ];
 
 export default function AboutPage() {
@@ -50,14 +61,18 @@ export default function AboutPage() {
       <section className="section text-full">
         <div className="section-head">
           <span className="eyebrow">About</span>
-          <h1>{SITE.name}</h1>
-          <p className="muted">{SITE.title}</p>
+          <h1>{SITE.fullName}</h1>
+          <p className="muted">
+            {SITE.title} · {SITE.location}
+          </p>
         </div>
         <p>
           I have spent {SITE.yearsExperience} years designing and building software, at Capgemini, Royal Bank of Scotland
-          and, since 2012, Cognizant. I have worked as an architect since 2017, most recently for a U.S. healthcare payer
-          client. I work across claims, enrollment, utilization management and provider data, and I focus on
-          bringing generative AI into those systems in ways that compliance, clinical and operations teams can sign off on.
+          and, since 2012, Cognizant. I have worked as an architect since 2018. Today I am the solutions architect for a
+          U.S. health plan&apos;s market-facing portfolio portals – member, provider, employer and broker portals – which
+          serve more than 2 million users on a platform of 400+ microservices on Azure. I focus on bringing generative AI into those systems in
+          ways that compliance, clinical and operations teams can sign off on, starting with an Azure OpenAI solution
+          that reads employer group documents and processes the actions in them.
         </p>
         <div className="actions">
           <a href={SITE.resumeUrl} className="btn">
@@ -116,6 +131,27 @@ export default function AboutPage() {
                     <span className="muted small">{c.place}</span>
                   </td>
                   <td>{c.highlights}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <span className="eyebrow">Credentials</span>
+          <h2>Education &amp; certifications</h2>
+        </div>
+        <div className="tablewrap">
+          <table>
+            <tbody>
+              {CREDENTIALS.map((c) => (
+                <tr key={c.name}>
+                  <td>
+                    <b>{c.name}</b>
+                  </td>
+                  <td className="muted">{c.from}</td>
                 </tr>
               ))}
             </tbody>
