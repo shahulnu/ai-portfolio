@@ -48,7 +48,7 @@ const CAREER = [
 ];
 
 const CREDENTIALS = [
-  { name: "Post Graduate Program in Artificial Intelligence and Machine Learning", from: "Purdue University" },
+  { name: "Post Graduate Program in Artificial Intelligence and Machine Learning", from: "Purdue University Online" },
   { name: "Bachelor of Technology, Computer Science and Engineering", from: "Calicut University" },
   { name: "Claude Certified Architect – Foundations", from: "Anthropic" },
   { name: "Microsoft Certified: Azure Fundamentals", from: "Microsoft" },
