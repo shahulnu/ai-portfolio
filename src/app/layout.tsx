@@ -9,9 +9,9 @@ const body = Source_Sans_3({ subsets: ["latin"], weight: ["400", "600", "700"], 
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: { default: `${SITE.name} · Healthcare Payer AI`, template: `%s · ${SITE.name}` },
+  title: { default: `${SITE.name} · AI Systems Architect`, template: `%s · ${SITE.name}` },
   description:
-    "Working AI applications for health plans: prior authorization, claims, member services, payment integrity and risk adjustment. Built on synthetic data.",
+    "Working AI applications for health plans and engineering teams: prior authorization, claims, fax intake, risk adjustment, code review and incident investigation. Built on synthetic data, with evals and human review.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
