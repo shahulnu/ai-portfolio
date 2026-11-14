@@ -72,7 +72,8 @@ export default function AboutPage() {
           U.S. health plan&apos;s market-facing portfolio portals – member, provider, employer and broker portals – which
           serve more than 2 million users on a platform of 400+ microservices on Azure. I focus on bringing generative AI into those systems in
           ways that compliance, clinical and operations teams can sign off on, starting with an Azure OpenAI solution
-          that reads employer group documents and processes the actions in them.
+          that reads employer group documents and processes the actions in them. I build generative AI applications with
+          Spring AI, LangChain and LangGraph, and I stay hands-on from requirements through production.
         </p>
         <div className="actions">
           <a href={SITE.resumeUrl} className="btn">
@@ -84,25 +85,46 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section text-full">
         <div className="section-head">
           <span className="eyebrow">Domain coverage</span>
-          <h2>Where I have worked in the payer stack</h2>
+          <h2>Where I have worked</h2>
         </div>
-        <div className="grid g3">
+        <div className="grid two-by-two">
           <div className="panel">
-            <h3>Core administration</h3>
-            <p className="muted">Claims adjudication, enrollment and eligibility, X12 837/835/834/270-271.</p>
+            <h3>Health plan portals on Azure</h3>
+            <p className="muted">
+              Member, provider, employer and broker portals for a U.S. health plan, serving more than 2 million users.
+              Digital transformation and cloud migration to an event-driven platform of 400+ microservices.
+            </p>
           </div>
           <div className="panel">
-            <h3>Clinical & UM</h3>
-            <p className="muted">Prior authorization (X12 278, Da Vinci PAS/CRD/DTR), care management, HEDIS.</p>
+            <h3>Healthcare EDI and prior authorization</h3>
+            <p className="muted">X12 EDI transactions, including the 278 prior authorization submission flow.</p>
           </div>
           <div className="panel">
             <h3>Interoperability</h3>
             <p className="muted">FHIR R4 APIs for Patient Access, Provider Directory and Payer-to-Payer exchange.</p>
           </div>
+          <div className="panel">
+            <h3>Generative AI and document processing</h3>
+            <p className="muted">
+              An Azure OpenAI solution that reads employer group documents and processes the actions in them. OCR and
+              intelligent document processing, with Spring AI, LangChain and LangGraph.
+            </p>
+          </div>
+          <div className="panel span-all">
+            <h3>Financial services</h3>
+            <p className="muted">
+              A bond offering platform for a U.S. mortgage finance client, a client services portal for corporate banking,
+              regulatory reporting for a global investment bank, and a credit bureau system in Oslo.
+            </p>
+          </div>
         </div>
+        <p className="muted">
+          The demos on this site go further into payer operations (prior authorization review, claims and appeals, risk
+          adjustment and payment integrity) using public standards and synthetic data.
+        </p>
       </section>
 
       <section className="section">
