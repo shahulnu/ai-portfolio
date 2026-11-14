@@ -338,3 +338,10 @@ details.panel summary { cursor: pointer; font-weight: 700; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 details summary { cursor: pointer; }
+
+/* Agent patterns (Architecture page) */
+.ap-wrap { padding: 10px; }
+.ap-svg { display: block; width: 100%; min-width: 440px; height: auto; font-family: var(--font-body), "Segoe UI", system-ui, sans-serif; }
+.ap-row { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: 20px; align-items: center; }
+.ap-text { display: grid; gap: 8px; align-content: center; }
+@media (max-width: 860px) { .ap-row { grid-template-columns: minmax(0, 1fr); } }

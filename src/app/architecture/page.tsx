@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AgentPatterns } from "@/components/AgentPatterns";
 import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { FLOW_STEPS } from "@/lib/architecture";
 
@@ -52,8 +53,12 @@ export default function ArchitecturePage() {
             <tbody>
               <tr>
                 <td>Agent or workflow</td>
-                <td>Fixed workflows</td>
-                <td>Payer processes are well defined and audited. A fixed sequence is easier to test, explain to compliance and debug.</td>
+                <td>Fixed workflows by default; agents where the path varies</td>
+                <td>
+                  Payer processes are well defined and audited, and a fixed sequence is easier to test, explain to compliance
+                  and debug. Benefits questions and fax lookups vary case by case, so those use tool-using agents in LangGraph,
+                  with read-only tools and code checking the result.
+                </td>
               </tr>
               <tr>
                 <td>Who decides</td>
@@ -75,9 +80,37 @@ export default function ArchitecturePage() {
                 <td>AWS, Claude on Bedrock</td>
                 <td>Most large payers already run on AWS under a BAA, so no new vendor review is needed.</td>
               </tr>
+              <tr>
+                <td>Tool access</td>
+                <td>MCP servers, read-only for agents</td>
+                <td>
+                  The systems team owns and secures each MCP server once, and any agent or client can use it. Agents get only
+                  lookup tools; write tools are called by code.
+                </td>
+              </tr>
+              <tr>
+                <td>Writes to systems of record</td>
+                <td>Human approval as a graph interrupt</td>
+                <td>
+                  The run pauses before any write and resumes only on a person&apos;s approval. The pause is part of the workflow
+                  state, so a client can&apos;t skip it, and the audit log records who approved.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="section text-full">
+        <div className="section-head">
+          <span className="eyebrow">Agent patterns</span>
+          <h2>Two multi-agent designs, with code in charge of both</h2>
+        </div>
+        <p>
+          The developer tools demos use the two common ways to split work across agents. In both, agents only read; code checks
+          what they return and makes the final call.
+        </p>
+        <AgentPatterns />
       </section>
     </div>
   );

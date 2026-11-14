@@ -63,29 +63,30 @@ function Frame({ x, y, w, h, title }: { x: number; y: number; w: number; h: numb
 }
 
 type BoxId =
-  | "inbound" | "portals" | "callctr" | "reviewer" | "gateway" | "redact" | "inject" | "workflows" | "checks" | "human"
-  | "claude" | "ml" | "policy" | "search" | "fhir" | "claims" | "calc" | "tests" | "evals" | "tracing" | "audit" | "risk";
+  | "inbound" | "fax" | "portals" | "callctr" | "reviewer" | "gateway" | "redact" | "inject" | "workflows" | "checks" | "human"
+  | "claude" | "ml" | "policy" | "search" | "fhir" | "mcp" | "calc" | "tests" | "evals" | "tracing" | "audit" | "risk";
 
 const BOXES: Record<BoxId, Omit<BoxProps, "lit">> = {
-  inbound: { x: 20, y: 70, w: 180, h: 56, lines: ["Inbound transactions"], sub: ["X12 278 · 837 · FHIR PAS"] },
-  portals: { x: 20, y: 140, w: 180, h: 50, lines: ["Member & provider", "portals"] },
-  callctr: { x: 20, y: 204, w: 180, h: 50, lines: ["Call-center desktop"] },
-  reviewer: { x: 20, y: 268, w: 180, h: 50, lines: ["Reviewer workbench"], sub: ["nurse / physician UI"] },
+  inbound: { x: 20, y: 62, w: 180, h: 46, lines: ["Inbound transactions"], sub: ["X12 278 · 837 · FHIR PAS"] },
+  fax: { x: 20, y: 120, w: 180, h: 46, lines: ["Fax & PDF intake"], sub: ["scanned prior auth requests"] },
+  portals: { x: 20, y: 178, w: 180, h: 46, lines: ["Member & provider", "portals"] },
+  callctr: { x: 20, y: 236, w: 180, h: 46, lines: ["Call-center desktop"] },
+  reviewer: { x: 20, y: 294, w: 180, h: 46, lines: ["Reviewer workbench"], sub: ["nurse / physician UI"] },
   gateway: { x: 250, y: 70, w: 180, h: 60, lines: ["API gateway"], sub: ["SSO · rate limits"] },
   redact: { x: 250, y: 165, w: 180, h: 50, lines: ["Identifier redaction"], sub: ["PHI removed pre-model"], keyControl: true },
   inject: { x: 250, y: 250, w: 180, h: 50, lines: ["Prompt-injection", "screen"] },
   workflows: {
-    x: 480, y: 70, w: 280, h: 130, lines: ["Use-case workflows"],
-    sub: ["Prior authorization", "Denials & appeals", "Benefits Q&A", "Payment integrity", "HCC evidence"], keyControl: true,
+    x: 480, y: 62, w: 280, h: 148, lines: ["Use-case workflows · LangGraph"],
+    sub: ["Prior authorization", "Denials & appeals", "Benefits Q&A (agent)", "Payment integrity", "HCC evidence", "Fax intake (agent + MCP)"], keyControl: true,
   },
-  checks: { x: 480, y: 220, w: 280, h: 50, lines: ["Citation check + routing rules"], sub: ["deterministic code"], keyControl: true },
-  human: { x: 480, y: 290, w: 280, h: 50, lines: ["Human review queue"], sub: ["a clinician makes every decision"], keyControl: true },
+  checks: { x: 480, y: 225, w: 280, h: 50, lines: ["Citation check + routing rules"], sub: ["deterministic code"], keyControl: true },
+  human: { x: 480, y: 290, w: 280, h: 50, lines: ["Human review & approval"], sub: ["a person approves every decision and write"], keyControl: true },
   claude: { x: 820, y: 70, w: 280, h: 70, lines: ["Claude Opus 5.5"], sub: ["Amazon Bedrock or Claude API", "structured output · prompt cache"] },
   ml: { x: 820, y: 160, w: 280, h: 56, lines: ["Classic ML · XGBoost"], sub: ["FWA outliers · overturn scoring"] },
   policy: { x: 482, y: 418, w: 116, h: 56, lines: ["Policy library"], sub: ["versioned"] },
   search: { x: 606, y: 418, w: 116, h: 56, lines: ["Hybrid search"], sub: ["pgvector"] },
   fhir: { x: 730, y: 418, w: 116, h: 56, lines: ["FHIR server"], sub: ["HAPI · Synthea"] },
-  claims: { x: 854, y: 418, w: 116, h: 56, lines: ["Claims &", "eligibility APIs"] },
+  mcp: { x: 854, y: 418, w: 116, h: 56, lines: ["MCP servers"], sub: ["eligibility · claims", "providers · cases"], keyControl: true },
   calc: { x: 978, y: 418, w: 120, h: 56, lines: ["Calculators"], sub: ["code maps"] },
   tests: { x: 22, y: 540, w: 200, h: 56, lines: ["Labeled test sets"], sub: ["per application"] },
   evals: { x: 240, y: 540, w: 200, h: 56, lines: ["Evals in CI"], sub: ["block on regression"], keyControl: true },
@@ -96,11 +97,12 @@ const BOXES: Record<BoxId, Omit<BoxProps, "lit">> = {
 
 // kind: req = request going in, ret = result coming back, log = logging.
 const LINKS: { d: string; kind: "req" | "ret" | "log"; arrow?: boolean }[] = [
-  { d: "M200,98 H225", kind: "req" },
-  { d: "M200,165 H225", kind: "req" },
-  { d: "M200,229 H225", kind: "req" },
-  { d: "M200,293 H225", kind: "req" },
-  { d: "M225,293 V100", kind: "req" },
+  { d: "M200,85 H225", kind: "req" },
+  { d: "M200,143 H225", kind: "req" },
+  { d: "M200,201 H225", kind: "req" },
+  { d: "M200,259 H225", kind: "req" },
+  { d: "M200,317 H225", kind: "req" },
+  { d: "M225,317 V85", kind: "req" },
   { d: "M225,100 H250", kind: "req", arrow: true },
   { d: "M340,130 V165", kind: "req", arrow: true },
   { d: "M430,190 H455 V135 H480", kind: "req", arrow: true },
@@ -111,24 +113,24 @@ const LINKS: { d: string; kind: "req" | "ret" | "log"; arrow?: boolean }[] = [
   ...[540, 664, 788, 912, 1038].map((x) => ({ d: `M${x},405 V418`, kind: "req" as const, arrow: true })),
   { d: "M760,105 H820", kind: "req", arrow: true },
   { d: "M760,188 H820", kind: "req", arrow: true },
-  { d: "M810,245 H760", kind: "ret", arrow: true },
-  { d: "M620,270 V290", kind: "req", arrow: true },
-  { d: "M480,315 H455 V350 H110 V318", kind: "ret", arrow: true },
+  { d: "M810,250 H760", kind: "ret", arrow: true },
+  { d: "M620,275 V290", kind: "req", arrow: true },
+  { d: "M480,315 H455 V355 H110 V340", kind: "ret", arrow: true },
   { d: "M340,365 V518", kind: "log", arrow: true },
 ];
 
-const BADGES: Pt[] = [[225, 196], [340, 147], [455, 163], [700, 385], [790, 105], [786, 245], [640, 280], [290, 350], [340, 452]];
+const BADGES: Pt[] = [[225, 196], [340, 147], [455, 163], [700, 385], [790, 105], [786, 250], [640, 282], [290, 355], [340, 452]];
 
 // The route the request dot travels in each step, and the boxes lit meanwhile.
 const ROUTES: { pts: Pt[]; lit: BoxId[] }[] = [
-  { pts: [[110, 98], [200, 98], [225, 98], [225, 100], [250, 100]], lit: ["inbound", "gateway"] },
+  { pts: [[110, 143], [200, 143], [225, 143], [225, 100], [250, 100]], lit: ["inbound", "fax", "gateway"] },
   { pts: [[340, 100], [340, 130], [340, 165]], lit: ["gateway", "redact"] },
   { pts: [[340, 190], [430, 190], [455, 190], [455, 135], [480, 135]], lit: ["redact", "inject", "workflows"] },
-  { pts: [[700, 365], [700, 405], [540, 405], [540, 418]], lit: ["workflows", "policy", "search", "fhir", "claims", "calc"] },
+  { pts: [[700, 365], [700, 405], [912, 405], [912, 418]], lit: ["workflows", "policy", "search", "fhir", "mcp", "calc"] },
   { pts: [[700, 105], [760, 105], [820, 105]], lit: ["workflows", "claude", "ml"] },
-  { pts: [[820, 245], [810, 245], [760, 245]], lit: ["claude", "checks"] },
-  { pts: [[620, 245], [620, 270], [620, 290]], lit: ["checks", "human"] },
-  { pts: [[480, 315], [455, 315], [455, 350], [110, 350], [110, 318]], lit: ["human", "reviewer"] },
+  { pts: [[820, 250], [810, 250], [760, 250]], lit: ["claude", "checks"] },
+  { pts: [[620, 250], [620, 275], [620, 290]], lit: ["checks", "human"] },
+  { pts: [[480, 315], [455, 315], [455, 355], [110, 355], [110, 340]], lit: ["human", "reviewer"] },
   { pts: [[340, 365], [340, 518]], lit: ["tracing", "audit", "evals"] },
 ];
 
@@ -198,9 +200,10 @@ export function ArchitectureDiagram() {
         >
           <title id="arch-title">Healthcare payer AI platform architecture</title>
           <desc id="arch-desc">
-            Requests flow from channels through an edge layer (gateway, redaction, injection screening) into use-case
-            workflows, which call knowledge sources, tools and models. Code checks citations and routes cases to a human
-            review queue. A quality and operations layer logs and evaluates every step.
+            Requests flow from channels, including faxed PDFs, through an edge layer (gateway, redaction, injection
+            screening) into use-case workflows and LangGraph agents, which call knowledge sources, MCP tool servers and
+            models. Code checks citations and fields and routes cases to a human review queue, where a person approves every
+            decision and every write. A quality and operations layer logs and evaluates every step.
           </desc>
           <defs>
             {(["req", "ret", "log"] as const).map((k) => (
