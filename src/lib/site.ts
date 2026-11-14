@@ -12,7 +12,7 @@ export const SITE = {
   resumeUrl: "/resume.pdf",
   yearsExperience: "20+",
   repos: {
-    site: "https://github.com/shahulnu/healthcare-payer-ai-portfolio",
+    site: "https://github.com/shahulnu/ai-portfolio",
     services: "https://github.com/shahulnu/healthcare-payer-ai-services",
     devAgents: "https://github.com/shahulnu/langgraph-dev-agents",
   },

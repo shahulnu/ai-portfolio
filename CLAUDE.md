@@ -1,4 +1,4 @@
-# Healthcare Payer AI Portfolio (site)
+# AI Portfolio (site)
 
 Portfolio site for **Shahul Ummarali**, a software architect at Cognizant with 20+ years' experience who works for a U.S. healthcare payer client. It goes on his resume and LinkedIn. Each app is a working demo for the payer domain, with a case-study page alongside it. Audience: hiring managers and architects, so pages should read as plain and credible, never hype.
 
