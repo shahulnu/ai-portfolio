@@ -69,7 +69,7 @@ export default function AboutPage() {
         <p>
           I have spent {SITE.yearsExperience} years designing and building software, at Capgemini, Royal Bank of Scotland
           and, since 2012, Cognizant. I have worked as an architect since 2018. Today I am the solutions architect for a
-          U.S. health plan&apos;s market-facing portfolio portals – member, provider, employer and broker portals – which
+          U.S. health plan&apos;s market-facing portals portfolio – member, provider, employer and broker portals – which
           serve more than 2 million users on a platform of 400+ microservices on Azure. I focus on bringing generative AI into those systems in
           ways that compliance, clinical and operations teams can sign off on, starting with an Azure OpenAI solution
           that reads employer group documents and processes the actions in them. I build generative AI applications with
