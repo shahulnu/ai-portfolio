@@ -39,16 +39,16 @@ const FRAMES = [
 ];
 const BOXES = {
   inbound: [20, 62, 180, 46, ["Inbound transactions"], ["X12 278 · 837 · FHIR PAS"]],
-  fax: [20, 120, 180, 46, ["Fax & PDF intake"], ["scanned prior auth requests"]],
-  portals: [20, 178, 180, 46, ["Member & provider", "portals"], []],
-  callctr: [20, 236, 180, 46, ["Call-center desktop"], []],
-  reviewer: [20, 294, 180, 46, ["Reviewer workbench"], ["nurse / physician UI"]],
+  fax: [20, 116, 180, 46, ["Fax & PDF intake"], ["scanned prior auth requests"]],
+  portals: [20, 170, 180, 46, ["Member & provider", "portals"], []],
+  callctr: [20, 224, 180, 46, ["Call-center desktop"], []],
+  reviewer: [20, 278, 180, 46, ["Reviewer workbench"], ["nurse / physician UI"]],
   gateway: [250, 70, 180, 60, ["API gateway"], ["SSO · rate limits"]],
   redact: [250, 165, 180, 50, ["Identifier redaction"], ["PHI removed pre-model"], true],
   inject: [250, 250, 180, 50, ["Prompt-injection", "screen"], []],
-  workflows: [480, 62, 280, 148, ["Use-case workflows · LangGraph"], ["Prior authorization", "Denials & appeals", "Benefits Q&A (agent)", "Payment integrity", "HCC evidence", "Fax intake (agent + MCP)"], true],
-  checks: [480, 225, 280, 50, ["Citation check + routing rules"], ["deterministic code"], true],
-  human: [480, 290, 280, 50, ["Human review & approval"], ["a person approves every decision and write"], true],
+  workflows: [480, 62, 280, 140, ["Use-case workflows · LangGraph"], ["Prior authorization", "Denials & appeals", "Benefits Q&A (agent)", "Payment integrity", "HCC evidence", "Fax intake (agent + MCP)"], true],
+  checks: [480, 220, 280, 46, ["Citation check + routing rules"], ["deterministic code"], true],
+  human: [480, 296, 280, 46, ["Human review & approval"], ["a person approves every decision and write"], true],
   claude: [820, 70, 280, 70, ["Claude Opus 5.5"], ["Amazon Bedrock or Claude API", "structured output · prompt cache"]],
   ml: [820, 160, 280, 56, ["Classic ML · XGBoost"], ["FWA outliers · overturn scoring"]],
   policy: [482, 418, 116, 56, ["Policy library"], ["versioned"]],
@@ -64,29 +64,29 @@ const BOXES = {
 };
 // kind: req (request, accent), ret (result returning, warm), log (logging, muted). arrow: draw head.
 const LINKS = [
-  ["M200,85 H225", "req"], ["M200,143 H225", "req"], ["M200,201 H225", "req"], ["M200,259 H225", "req"], ["M200,317 H225", "req"],
-  ["M225,317 V85", "req"], ["M225,100 H250", "req", true],
+  ["M200,85 H225", "req"], ["M200,139 H225", "req"], ["M200,193 H225", "req"], ["M200,247 H225", "req"], ["M200,301 H225", "req"],
+  ["M225,301 V85", "req"], ["M225,100 H250", "req", true],
   ["M340,130 V165", "req", true],
   ["M430,190 H455 V135 H480", "req", true], ["M340,215 V250", "req"],
   ["M700,365 V405", "req"], ["M700,405 H540", "req"], ["M700,405 H1038", "req"],
   ...[540, 664, 788, 912, 1038].map((x) => [`M${x},405 V418`, "req", true]),
   ["M760,105 H820", "req", true], ["M760,188 H820", "req", true],
-  ["M810,250 H760", "ret", true],
-  ["M620,275 V290", "req", true],
-  ["M480,315 H455 V355 H110 V340", "ret", true],
+  ["M810,243 H760", "ret", true],
+  ["M620,266 V296", "req", true],
+  ["M480,319 H455 V355 H110 V324", "ret", true],
   ["M340,365 V518", "log", true],
 ];
-const BADGES = [[225, 196], [340, 147], [455, 163], [700, 385], [790, 105], [786, 250], [640, 282], [290, 355], [340, 452]];
+const BADGES = [[225, 166], [340, 147], [455, 163], [700, 385], [790, 105], [786, 243], [640, 281], [290, 355], [340, 452]];
 // Route the packet travels for each step, and the boxes lit while it does.
 const ROUTES = [
-  [[[110, 143], [200, 143], [225, 143], [225, 100], [250, 100]], ["inbound", "fax", "gateway"]],
+  [[[110, 139], [200, 139], [225, 139], [225, 100], [250, 100]], ["inbound", "fax", "gateway"]],
   [[[340, 100], [340, 130], [340, 165]], ["gateway", "redact"]],
   [[[340, 190], [430, 190], [455, 190], [455, 135], [480, 135]], ["redact", "inject", "workflows"]],
   [[[700, 365], [700, 405], [912, 405], [912, 418]], ["workflows", "policy", "search", "fhir", "mcp", "calc"]],
   [[[700, 105], [760, 105], [820, 105]], ["workflows", "claude", "ml"]],
-  [[[820, 250], [810, 250], [760, 250]], ["claude", "checks"]],
-  [[[620, 250], [620, 275], [620, 290]], ["checks", "human"]],
-  [[[480, 315], [455, 315], [455, 355], [110, 355], [110, 340]], ["human", "reviewer"]],
+  [[[820, 243], [810, 243], [760, 243]], ["claude", "checks"]],
+  [[[620, 243], [620, 266], [620, 296]], ["checks", "human"]],
+  [[[480, 319], [455, 319], [455, 355], [110, 355], [110, 324]], ["human", "reviewer"]],
   [[[340, 365], [340, 518]], ["tracing", "audit", "evals"]],
 ];
 

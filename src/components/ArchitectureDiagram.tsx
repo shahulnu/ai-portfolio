@@ -68,19 +68,19 @@ type BoxId =
 
 const BOXES: Record<BoxId, Omit<BoxProps, "lit">> = {
   inbound: { x: 20, y: 62, w: 180, h: 46, lines: ["Inbound transactions"], sub: ["X12 278 · 837 · FHIR PAS"] },
-  fax: { x: 20, y: 120, w: 180, h: 46, lines: ["Fax & PDF intake"], sub: ["scanned prior auth requests"] },
-  portals: { x: 20, y: 178, w: 180, h: 46, lines: ["Member & provider", "portals"] },
-  callctr: { x: 20, y: 236, w: 180, h: 46, lines: ["Call-center desktop"] },
-  reviewer: { x: 20, y: 294, w: 180, h: 46, lines: ["Reviewer workbench"], sub: ["nurse / physician UI"] },
+  fax: { x: 20, y: 116, w: 180, h: 46, lines: ["Fax & PDF intake"], sub: ["scanned prior auth requests"] },
+  portals: { x: 20, y: 170, w: 180, h: 46, lines: ["Member & provider", "portals"] },
+  callctr: { x: 20, y: 224, w: 180, h: 46, lines: ["Call-center desktop"] },
+  reviewer: { x: 20, y: 278, w: 180, h: 46, lines: ["Reviewer workbench"], sub: ["nurse / physician UI"] },
   gateway: { x: 250, y: 70, w: 180, h: 60, lines: ["API gateway"], sub: ["SSO · rate limits"] },
   redact: { x: 250, y: 165, w: 180, h: 50, lines: ["Identifier redaction"], sub: ["PHI removed pre-model"], keyControl: true },
   inject: { x: 250, y: 250, w: 180, h: 50, lines: ["Prompt-injection", "screen"] },
   workflows: {
-    x: 480, y: 62, w: 280, h: 148, lines: ["Use-case workflows · LangGraph"],
+    x: 480, y: 62, w: 280, h: 140, lines: ["Use-case workflows · LangGraph"],
     sub: ["Prior authorization", "Denials & appeals", "Benefits Q&A (agent)", "Payment integrity", "HCC evidence", "Fax intake (agent + MCP)"], keyControl: true,
   },
-  checks: { x: 480, y: 225, w: 280, h: 50, lines: ["Citation check + routing rules"], sub: ["deterministic code"], keyControl: true },
-  human: { x: 480, y: 290, w: 280, h: 50, lines: ["Human review & approval"], sub: ["a person approves every decision and write"], keyControl: true },
+  checks: { x: 480, y: 220, w: 280, h: 46, lines: ["Citation check + routing rules"], sub: ["deterministic code"], keyControl: true },
+  human: { x: 480, y: 296, w: 280, h: 46, lines: ["Human review & approval"], sub: ["a person approves every decision and write"], keyControl: true },
   claude: { x: 820, y: 70, w: 280, h: 70, lines: ["Claude Opus 5.5"], sub: ["Amazon Bedrock or Claude API", "structured output · prompt cache"] },
   ml: { x: 820, y: 160, w: 280, h: 56, lines: ["Classic ML · XGBoost"], sub: ["FWA outliers · overturn scoring"] },
   policy: { x: 482, y: 418, w: 116, h: 56, lines: ["Policy library"], sub: ["versioned"] },
@@ -98,11 +98,11 @@ const BOXES: Record<BoxId, Omit<BoxProps, "lit">> = {
 // kind: req = request going in, ret = result coming back, log = logging.
 const LINKS: { d: string; kind: "req" | "ret" | "log"; arrow?: boolean }[] = [
   { d: "M200,85 H225", kind: "req" },
-  { d: "M200,143 H225", kind: "req" },
-  { d: "M200,201 H225", kind: "req" },
-  { d: "M200,259 H225", kind: "req" },
-  { d: "M200,317 H225", kind: "req" },
-  { d: "M225,317 V85", kind: "req" },
+  { d: "M200,139 H225", kind: "req" },
+  { d: "M200,193 H225", kind: "req" },
+  { d: "M200,247 H225", kind: "req" },
+  { d: "M200,301 H225", kind: "req" },
+  { d: "M225,301 V85", kind: "req" },
   { d: "M225,100 H250", kind: "req", arrow: true },
   { d: "M340,130 V165", kind: "req", arrow: true },
   { d: "M430,190 H455 V135 H480", kind: "req", arrow: true },
@@ -113,24 +113,24 @@ const LINKS: { d: string; kind: "req" | "ret" | "log"; arrow?: boolean }[] = [
   ...[540, 664, 788, 912, 1038].map((x) => ({ d: `M${x},405 V418`, kind: "req" as const, arrow: true })),
   { d: "M760,105 H820", kind: "req", arrow: true },
   { d: "M760,188 H820", kind: "req", arrow: true },
-  { d: "M810,250 H760", kind: "ret", arrow: true },
-  { d: "M620,275 V290", kind: "req", arrow: true },
-  { d: "M480,315 H455 V355 H110 V340", kind: "ret", arrow: true },
+  { d: "M810,243 H760", kind: "ret", arrow: true },
+  { d: "M620,266 V296", kind: "req", arrow: true },
+  { d: "M480,319 H455 V355 H110 V324", kind: "ret", arrow: true },
   { d: "M340,365 V518", kind: "log", arrow: true },
 ];
 
-const BADGES: Pt[] = [[225, 196], [340, 147], [455, 163], [700, 385], [790, 105], [786, 250], [640, 282], [290, 355], [340, 452]];
+const BADGES: Pt[] = [[225, 166], [340, 147], [455, 163], [700, 385], [790, 105], [786, 243], [640, 281], [290, 355], [340, 452]];
 
 // The route the request dot travels in each step, and the boxes lit meanwhile.
 const ROUTES: { pts: Pt[]; lit: BoxId[] }[] = [
-  { pts: [[110, 143], [200, 143], [225, 143], [225, 100], [250, 100]], lit: ["inbound", "fax", "gateway"] },
+  { pts: [[110, 139], [200, 139], [225, 139], [225, 100], [250, 100]], lit: ["inbound", "fax", "gateway"] },
   { pts: [[340, 100], [340, 130], [340, 165]], lit: ["gateway", "redact"] },
   { pts: [[340, 190], [430, 190], [455, 190], [455, 135], [480, 135]], lit: ["redact", "inject", "workflows"] },
   { pts: [[700, 365], [700, 405], [912, 405], [912, 418]], lit: ["workflows", "policy", "search", "fhir", "mcp", "calc"] },
   { pts: [[700, 105], [760, 105], [820, 105]], lit: ["workflows", "claude", "ml"] },
-  { pts: [[820, 250], [810, 250], [760, 250]], lit: ["claude", "checks"] },
-  { pts: [[620, 250], [620, 275], [620, 290]], lit: ["checks", "human"] },
-  { pts: [[480, 315], [455, 315], [455, 355], [110, 355], [110, 340]], lit: ["human", "reviewer"] },
+  { pts: [[820, 243], [810, 243], [760, 243]], lit: ["claude", "checks"] },
+  { pts: [[620, 243], [620, 266], [620, 296]], lit: ["checks", "human"] },
+  { pts: [[480, 319], [455, 319], [455, 355], [110, 355], [110, 324]], lit: ["human", "reviewer"] },
   { pts: [[340, 365], [340, 518]], lit: ["tracing", "audit", "evals"] },
 ];
 
