@@ -23,7 +23,7 @@ export default function Home() {
             <b>{APPS.length}</b>working AI applications
           </span>
           <span>
-            <b>FHIR · X12 · CMS</b>standards I build on
+            <b>X12 · FHIR · CMS rules</b>standards I build on
           </span>
         </div>
         <div className="actions">
