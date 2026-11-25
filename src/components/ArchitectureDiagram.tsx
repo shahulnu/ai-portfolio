@@ -83,11 +83,11 @@ const BOXES: Record<BoxId, Omit<BoxProps, "lit">> = {
   human: { x: 480, y: 296, w: 280, h: 46, lines: ["Human review & approval"], sub: ["a person approves every decision and write"], keyControl: true },
   claude: { x: 820, y: 70, w: 280, h: 70, lines: ["Claude Opus 5.5"], sub: ["Amazon Bedrock or Claude API", "structured output · prompt cache"] },
   ml: { x: 820, y: 160, w: 280, h: 56, lines: ["Classic ML · XGBoost"], sub: ["FWA outliers · overturn scoring"] },
-  policy: { x: 482, y: 418, w: 116, h: 56, lines: ["Policy library"], sub: ["versioned"] },
-  search: { x: 606, y: 418, w: 116, h: 56, lines: ["Hybrid search"], sub: ["pgvector"] },
-  fhir: { x: 730, y: 418, w: 116, h: 56, lines: ["FHIR server"], sub: ["HAPI · Synthea"] },
-  mcp: { x: 854, y: 418, w: 116, h: 56, lines: ["MCP servers"], sub: ["eligibility · claims", "providers · cases"], keyControl: true },
-  calc: { x: 978, y: 418, w: 120, h: 56, lines: ["Calculators"], sub: ["code maps"] },
+  policy: { x: 482, y: 430, w: 116, h: 56, lines: ["Policy library"], sub: ["versioned"] },
+  search: { x: 606, y: 430, w: 116, h: 56, lines: ["Hybrid search"], sub: ["pgvector"] },
+  fhir: { x: 730, y: 430, w: 116, h: 56, lines: ["FHIR server"], sub: ["HAPI · Synthea"] },
+  mcp: { x: 854, y: 430, w: 116, h: 56, lines: ["MCP servers"], sub: ["eligibility · claims", "providers · cases"], keyControl: true },
+  calc: { x: 978, y: 430, w: 120, h: 56, lines: ["Calculators"], sub: ["code maps"] },
   tests: { x: 22, y: 540, w: 200, h: 56, lines: ["Labeled test sets"], sub: ["per application"] },
   evals: { x: 240, y: 540, w: 200, h: 56, lines: ["Evals in CI"], sub: ["block on regression"], keyControl: true },
   tracing: { x: 458, y: 540, w: 200, h: 56, lines: ["Tracing"], sub: ["latency · cost per case"] },
@@ -107,10 +107,10 @@ const LINKS: { d: string; kind: "req" | "ret" | "log"; arrow?: boolean }[] = [
   { d: "M340,130 V165", kind: "req", arrow: true },
   { d: "M430,190 H455 V135 H480", kind: "req", arrow: true },
   { d: "M340,215 V250", kind: "req" },
-  { d: "M700,365 V405", kind: "req" },
-  { d: "M700,405 H540", kind: "req" },
-  { d: "M700,405 H1038", kind: "req" },
-  ...[540, 664, 788, 912, 1038].map((x) => ({ d: `M${x},405 V418`, kind: "req" as const, arrow: true })),
+  { d: "M700,365 V402", kind: "req" },
+  { d: "M700,402 H540", kind: "req" },
+  { d: "M700,402 H1038", kind: "req" },
+  ...[540, 664, 788, 912, 1038].map((x) => ({ d: `M${x},402 V430`, kind: "req" as const, arrow: true })),
   { d: "M760,105 H820", kind: "req", arrow: true },
   { d: "M760,188 H820", kind: "req", arrow: true },
   { d: "M810,243 H760", kind: "ret", arrow: true },
@@ -126,7 +126,7 @@ const ROUTES: { pts: Pt[]; lit: BoxId[] }[] = [
   { pts: [[110, 139], [200, 139], [225, 139], [225, 100], [250, 100]], lit: ["inbound", "fax", "gateway"] },
   { pts: [[340, 100], [340, 130], [340, 165]], lit: ["gateway", "redact"] },
   { pts: [[340, 190], [430, 190], [455, 190], [455, 135], [480, 135]], lit: ["redact", "inject", "workflows"] },
-  { pts: [[700, 365], [700, 405], [912, 405], [912, 418]], lit: ["workflows", "policy", "search", "fhir", "mcp", "calc"] },
+  { pts: [[700, 365], [700, 402], [912, 402], [912, 430]], lit: ["workflows", "policy", "search", "fhir", "mcp", "calc"] },
   { pts: [[700, 105], [760, 105], [820, 105]], lit: ["workflows", "claude", "ml"] },
   { pts: [[820, 243], [810, 243], [760, 243]], lit: ["claude", "checks"] },
   { pts: [[620, 243], [620, 266], [620, 296]], lit: ["checks", "human"] },
@@ -217,7 +217,7 @@ export function ArchitectureDiagram() {
           <Frame x={240} y={45} w={200} h={320} title="EDGE" />
           <Frame x={470} y={45} w={300} h={320} title="ORCHESTRATION" />
           <Frame x={810} y={45} w={300} h={320} title="MODELS" />
-          <Frame x={470} y={392} w={640} h={96} title="KNOWLEDGE & TOOLS" />
+          <Frame x={470} y={392} w={640} h={100} title="KNOWLEDGE & TOOLS" />
           <Frame x={10} y={518} w={1100} h={92} title="QUALITY & OPERATIONS" />
 
           {(Object.keys(BOXES) as BoxId[]).map((id) => (
