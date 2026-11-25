@@ -87,7 +87,7 @@ function FanOut() {
   const id = "ap-fan";
   return (
     <svg
-      viewBox="0 0 520 290"
+      viewBox="0 0 560 290"
       className="ap-svg"
       role="img"
       aria-labelledby={`${id}-t`}
@@ -97,22 +97,22 @@ function FanOut() {
         code verifies and decides.
       </title>
       <Markers id={id} />
-      <Box x={8} y={120} w={104} h={50} label="Parse diff" sub="code" />
-      <Box x={130} y={120} w={104} h={50} label="Plan" sub="code" hl />
-      <Box x={262} y={30} w={110} h={50} label="Correctness" sub="Claude" />
-      <Box x={262} y={120} w={110} h={50} label="Security" sub="Claude" />
-      <Box x={262} y={210} w={110} h={50} label="Tests" sub="Claude" />
-      <Box x={402} y={80} w={110} h={50} label="Verify" sub="code" hl />
-      <Box x={402} y={165} w={110} h={50} label="Decide" sub="code" hl />
-      <Line id={id} d="M112,145 H130" kind="req" arrow />
-      <Line id={id} d="M234,145 H246 V55 H262" kind="req" arrow />
-      <Line id={id} d="M246,145 H262" kind="req" arrow />
-      <Line id={id} d="M246,145 V235 H262" kind="req" arrow />
-      <Line id={id} d="M372,55 H386 V105" kind="ret" />
-      <Line id={id} d="M372,145 H386 V105" kind="ret" />
-      <Line id={id} d="M372,235 H386 V105" kind="ret" />
-      <Line id={id} d="M386,105 H402" kind="ret" arrow />
-      <Line id={id} d="M457,130 V165" kind="req" arrow />
+      <Box x={8} y={120} w={100} h={50} label="Parse diff" sub="code" />
+      <Box x={136} y={120} w={100} h={50} label="Plan" sub="code" hl />
+      <Box x={282} y={30} w={110} h={50} label="Correctness" sub="Claude" />
+      <Box x={282} y={120} w={110} h={50} label="Security" sub="Claude" />
+      <Box x={282} y={210} w={110} h={50} label="Tests" sub="Claude" />
+      <Box x={442} y={80} w={110} h={50} label="Verify" sub="code" hl />
+      <Box x={442} y={165} w={110} h={50} label="Decide" sub="code" hl />
+      <Line id={id} d="M108,145 H136" kind="req" arrow />
+      <Line id={id} d="M236,145 H252 V55 H282" kind="req" arrow />
+      <Line id={id} d="M252,145 H282" kind="req" arrow />
+      <Line id={id} d="M252,145 V235 H282" kind="req" arrow />
+      <Line id={id} d="M392,55 H412 V105" kind="ret" />
+      <Line id={id} d="M392,145 H412 V105" kind="ret" />
+      <Line id={id} d="M392,235 H412 V105" kind="ret" />
+      <Line id={id} d="M412,105 H442" kind="ret" arrow />
+      <Line id={id} d="M497,130 V165" kind="req" arrow />
       <text x={8} y={282} className="arch-sub">
         Planned once by code; reviewers run in parallel (Send) and report once.
       </text>
@@ -165,11 +165,11 @@ function Orchestrator() {
       <text x={172} y={36} textAnchor="middle" className="arch-sub">
         done
       </text>
-      <Line id={id} d="M271,70 V96" kind="req" />
-      <Line id={id} d="M54,96 H462" kind="req" />
+      <Line id={id} d="M271,70 V92" kind="req" />
+      <Line id={id} d="M54,92 H462" kind="req" />
       {xs.map((x, i) => (
         <g key={x}>
-          <Line id={id} d={`M${x + 46},96 V122`} kind="req" arrow />
+          <Line id={id} d={`M${x + 46},92 V122`} kind="req" arrow />
           <Box
             x={x}
             y={122}
@@ -179,21 +179,21 @@ function Orchestrator() {
             sub={names[i][1]}
             hl={i === 4}
           />
-          <Line id={id} d={`M${x + 46},172 V190`} kind="ret" />
+          <Line id={id} d={`M${x + 46},172 V186`} kind="ret" />
         </g>
       ))}
-      <Line id={id} d="M54,190 H462" kind="ret" />
-      <Line id={id} d="M271,190 V204" kind="ret" arrow />
+      <Line id={id} d="M54,186 H462" kind="ret" />
+      <Line id={id} d="M271,186 V214" kind="ret" arrow />
       <Box
         x={161}
-        y={204}
+        y={214}
         w={220}
         h={46}
         label="Case file"
         sub="verified evidence only"
         hl
       />
-      <Line id={id} d="M381,227 H540 V43 H346" kind="ret" arrow />
+      <Line id={id} d="M381,237 H540 V43 H346" kind="ret" arrow />
       <text x={8} y={282} className="arch-sub">
         One specialist at a time; the path depends on what each one finds.
       </text>
