@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Bricolage_Grotesque, JetBrains_Mono, Source_Sans_3 } from "next/font/google";
 import { SITE } from "@/lib/site";
@@ -24,7 +25,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <div className="wrap">
             <Link href="/" className="brand">
-              {SITE.name} <span>· AI Systems Architect</span>
+              {/* Decorative: the link's accessible name comes from the text beside it. */}
+              <Image src="/logo.png" alt="" width={32} height={32} className="brand-logo" priority />
+              <span className="brand-text">
+                {SITE.name} <span>· AI Systems Architect</span>
+              </span>
             </Link>
             <nav className="site-nav" aria-label="Main">
               <Link href="/apps">Apps</Link>
