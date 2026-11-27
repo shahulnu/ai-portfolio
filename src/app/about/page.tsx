@@ -12,7 +12,7 @@ const CAREER = [
     org: "Cognizant",
     place: "Mississauga, ON, Canada",
     highlights:
-      "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure. Leads a 40-person team across India, Canada and the United States.",
+      "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure. Delivered Kafka data pipelines from Facets, Facets consolidations across lines of business, X12 EDI transactions and FHIR R4 APIs. Leads a 40-person team across India, Canada and the United States.",
   },
   {
     years: "2018–2020",
@@ -70,7 +70,8 @@ export default function AboutPage() {
           I have spent {SITE.yearsExperience} years designing and building software, at Capgemini, Royal Bank of Scotland
           and, since 2012, Cognizant. I have worked as an architect since 2018. Today I am the solutions architect for a
           U.S. health plan&apos;s market-facing portals portfolio – member, provider, employer and broker portals – which
-          serve more than 2 million users on a platform of 400+ microservices on Azure. I build generative AI
+          serve more than 2 million users on a platform of 400+ microservices on Azure, integrated with Facets through
+          Kafka data pipelines, X12 EDI and FHIR R4 APIs. I build generative AI
           applications with Spring AI, LangChain and LangGraph, designed so that compliance, clinical and operations
           teams can sign off on them, and I stay hands-on from requirements through production.
         </p>
@@ -98,14 +99,34 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="panel">
-            <h3>Healthcare EDI and prior authorization</h3>
-            <p className="muted">X12 EDI transactions, including the 278 prior authorization submission flow.</p>
+            <h3>Event-driven data pipelines</h3>
+            <p className="muted">
+              Kafka data pipelines that keep the microservices&apos; domain data stores in sync with the Facets enrollment
+              source systems.
+            </p>
+          </div>
+          <div className="panel">
+            <h3>Facets consolidation</h3>
+            <p className="muted">Multiple Facets consolidation projects across lines of business.</p>
+          </div>
+          <div className="panel">
+            <h3>Healthcare EDI</h3>
+            <p className="muted">
+              X12 270/271 eligibility and benefits, 275 patient information, 276/277 claim status, and 278 authorization
+              and referral.
+            </p>
           </div>
           <div className="panel">
             <h3>Interoperability</h3>
-            <p className="muted">FHIR R4 APIs for Patient Access, Provider Directory and Payer-to-Payer exchange.</p>
+            <p className="muted">
+              FHIR R4 APIs for Patient Access, Provider Access, Provider Directory and Payer-to-Payer exchange.
+            </p>
           </div>
           <div className="panel">
+            <h3>Pharmacy benefits (PBM)</h3>
+            <p className="muted">Utilization management billing and invoice reconciliation.</p>
+          </div>
+          <div className="panel span-all">
             <h3>Financial services</h3>
             <p className="muted">
               A bond offering platform for a U.S. mortgage finance client, a client services portal for corporate banking,
