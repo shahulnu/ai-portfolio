@@ -1,6 +1,19 @@
-# Healthcare Payer AI Portfolio
+# AI Portfolio: Healthcare Payer and Developer Agent Demos
 
-Portfolio site with working AI applications for U.S. health plan workflows. All five apps are live: **Prior Auth Copilot**, **Denial & Appeals Assistant**, **Benefits Navigator**, **Payment Integrity Radar** and **HCC Evidence Finder**.
+Portfolio site with eight working AI applications: six for U.S. health plan workflows and two agents for engineering teams. Each app has a live demo and a case study page with its eval results.
+
+| Demo | Area | Engine |
+|---|---|---|
+| [Prior Auth Copilot](#prior-auth-copilot) | Utilization management | TypeScript, with a Java version |
+| [Denial & Appeals Assistant](#denial--appeals-assistant) | Claims | TypeScript, with a Java version |
+| [Benefits Navigator](#benefits-navigator) | Member services | TypeScript, with a Java version |
+| [Payment Integrity Radar](#payment-integrity-radar) | Fraud, waste & abuse | TypeScript, with a Java version |
+| [HCC Evidence Finder](#hcc-evidence-finder) | Risk adjustment | TypeScript, with a Java version |
+| [Fax Intake Agent](#fax-intake-agent) | Utilization management intake | Python LangGraph + MCP (`payer-ai-agents`) |
+| [Code Review Agent](#code-review-agent) | Code review | Python LangGraph (`langgraph-dev-agents`) |
+| [Incident Debugger](#incident-debugger) | Incident response | Python LangGraph (`langgraph-dev-agents`) |
+
+Every demo follows the same rules: code makes the decisions and the model reads and explains, every quote is checked word for word against its source, and nothing is written to a system of record without a person.
 
 All data is synthetic, and the coverage policies are illustrative. None of it comes from a real payer, provider or member.
 
@@ -101,9 +114,49 @@ Nothing is submitted or deleted automatically. The prompt excludes risk scores a
 
 A Spring Boot version of this engine is in the services project.
 
+## Fax Intake Agent
+
+Turns a scanned prior authorization fax into a case in the plan's systems. The engine is a Python LangGraph + LangChain + MCP service in the sibling repo `payer-ai-agents` (port 8091). This site has no TypeScript engine for it.
+
+1. **read_fax** with Claude: reads the image-only PDF pages into fixed fields, each marked clear, unclear or missing, with its page. Unclear values are never guessed.
+2. **check_fields** in code: NPI check digit, ID and code formats, dates and the signature
+3. **look_up** with Claude and four read-only MCP tools: find the member, check eligibility, verify the provider, find the policy. Code checks each call against the fax and makes any lookup the agent skipped.
+4. **decide** in code: create a case, send to the eligibility queue, or manual intake
+5. **approve** by a person: a LangGraph interrupt pauses the run with the reading, lookups and proposed writes
+6. **act** in code, only after approval: create the case (always pending review, with the CMS-0057-F deadline) or route it, then attach the fax
+
+The agent only gets the read tools, so it can't write even if a fax tells it to. One test fax has a footer telling automated systems to approve the case; the run still pauses, and the case starts as pending review.
+
+Replay serves `data/fax-intake/results/*.json` (each holds a paused and an approved run) and the fax page images in `public/fax-intake/`. Set `FAX_INTAKE_ENGINE_URL` to forward live runs to the service; `/api/fax-intake/approve` resumes a paused run.
+
+## Code Review Agent
+
+Reviews a pull request with specialist reviewers running in parallel. The engine is a Python LangGraph + LangChain FastAPI service in the sibling repo `langgraph-dev-agents` (port 8090).
+
+1. **parse_diff** in code: files and numbered added lines
+2. **plan_review** in code: correctness always, security when the change touches SQL, shell, secrets, auth or user input, tests when source files change
+3. **review** with Claude, one parallel branch per reviewer through LangGraph's Send API, in a fixed schema
+4. **verify** in code: a finding is kept only if its quoted code is on an added line of that file. Wrong line numbers are corrected and duplicates merged.
+5. **decide** in code: the suggested verdict comes from verified severities. A maintainer decides.
+
+The diff is treated as data: a test pull request that asks AI reviewers to approve it still gets "request changes". Replay serves `data/code-review/results/*.json`; set `CODE_REVIEW_ENGINE_URL` for live runs.
+
+## Incident Debugger
+
+A lead agent investigates a production incident by delegating to specialists. Same Python service as the Code Review Agent (port 8090).
+
+- **Orchestrator** (Claude): reads the case file and each turn delegates one task or concludes, routed with LangGraph's `Command(goto)`
+- **Specialists**, each a LangGraph subgraph with read-only tools: log analyst, metrics analyst, change investigator, code reader
+- **Reproducer**: Claude writes one pytest test; code runs it on both versions in a subprocess with a timeout
+- **Code** enforces a budget of 8 delegations, removes any citation (log line, commit, file:line, metric, note) that doesn't exist, and sets the verdict. A root cause is confirmed only when the test fails on the deployed version and passes on the one before.
+
+The three synthetic incidents include a red-herring log-format commit and a vendor outage that started before the deploy. Replay serves `data/incident/results/*.json`; set `INCIDENT_ENGINE_URL` for live runs.
+
+For all three Python demos, the replay files are exported by `scripts/export_site.py` in their repo (and `scripts/make_faxes.py --site` for the fax images), so Vercel needs no Python host.
+
 ## Java services
 
-The Spring Boot versions of all five engines live in a separate project, `healthcare-payer-ai-services`, in the folder next to this one. It builds and deploys on its own. This site only reaches it through a URL. Without Java, the TypeScript engines here handle everything, so Vercel needs nothing extra.
+The Spring Boot versions of the five TypeScript engines live in a separate project, `healthcare-payer-ai-services`, in the folder next to this one. It builds and deploys on its own. This site only reaches it through a URL. Without Java, the TypeScript engines here handle everything, so Vercel needs nothing extra.
 
 To run a demo on Java, start the service there and set its URL in `.env.local`:
 
@@ -148,6 +201,16 @@ Labels are in `evals/labels.json`, `evals/appeals-labels.json`, `evals/benefits-
 
 Each app's `recorded.json` holds the outputs replay mode plays back. Its `"source"` field says whether they came from a live Claude run (`"live"`) or were written by hand (`"sample"`), and the demo labels them accordingly. All five apps' outputs are currently from live runs. Re-record whenever you change a prompt, policy or case.
 
+The three Python demos are evaluated and recorded in their own repos, which export the results and `eval-summary.json` into `data/fax-intake`, `data/code-review` and `data/incident`. Their latest live runs (Claude Opus 5.5, November 2026):
+
+| Demo | Labeled set | Result | Cost |
+|---|---|---|---|
+| Fax Intake Agent | 4 faxes, 32 fields | 100% field and route accuracy, 0 writes before approval, injection resisted | $0.21 |
+| Code Review Agent | 3 pull requests, 4 required findings | 100% recall, 0 false positives, verdicts correct, injection resisted | $0.11 |
+| Incident Debugger | 3 incidents | correct root cause and verdict in all 3, 0 red herrings blamed, 3 delegations on average | $0.81 |
+
+These small synthetic sets show the pipelines work; they aren't benchmarks.
+
 ## Architecture GIF
 
 `scripts/make-architecture-gif.js` renders the platform architecture diagram as an animated GIF for LinkedIn posts, slides or a README. The output is `public/architecture-flow.gif`: 1120×742 px, about 0.5 MB, a 9.4-second loop.
@@ -181,7 +244,7 @@ Things to keep in sync:
 
 - `src/lib/site.ts`: name, email, LinkedIn, GitHub, app list
 - `src/app/about/page.tsx`: career timeline
-- `public/resume.pdf`: add your resume
+- `public/resume.pdf`: the public copy of the resume (no phone number, clients described by industry)
 - Expand `src/lib/pa/cases.ts` and `evals/labels.json` toward 150–300 cases before quoting accuracy numbers
 
 ## Deploy
