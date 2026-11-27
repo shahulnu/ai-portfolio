@@ -12,7 +12,7 @@ const CAREER = [
     org: "Cognizant",
     place: "Mississauga, ON, Canada",
     highlights:
-      "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure, and designed and delivered an Azure OpenAI solution that reads employer group documents and processes the actions in them. Leads a 40-person team across India, Canada and the United States.",
+      "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure. Leads a 40-person team across India, Canada and the United States.",
   },
   {
     years: "2018–2020",
@@ -70,10 +70,9 @@ export default function AboutPage() {
           I have spent {SITE.yearsExperience} years designing and building software, at Capgemini, Royal Bank of Scotland
           and, since 2012, Cognizant. I have worked as an architect since 2018. Today I am the solutions architect for a
           U.S. health plan&apos;s market-facing portals portfolio – member, provider, employer and broker portals – which
-          serve more than 2 million users on a platform of 400+ microservices on Azure. I focus on bringing generative AI into those systems in
-          ways that compliance, clinical and operations teams can sign off on, starting with an Azure OpenAI solution
-          that reads employer group documents and processes the actions in them. I build generative AI applications with
-          Spring AI, LangChain and LangGraph, and I stay hands-on from requirements through production.
+          serve more than 2 million users on a platform of 400+ microservices on Azure. I build generative AI
+          applications with Spring AI, LangChain and LangGraph, designed so that compliance, clinical and operations
+          teams can sign off on them, and I stay hands-on from requirements through production.
         </p>
         <div className="actions">
           <a href={SITE.resumeUrl} className="btn">
@@ -107,13 +106,6 @@ export default function AboutPage() {
             <p className="muted">FHIR R4 APIs for Patient Access, Provider Directory and Payer-to-Payer exchange.</p>
           </div>
           <div className="panel">
-            <h3>Generative AI and document processing</h3>
-            <p className="muted">
-              An Azure OpenAI solution that reads employer group documents and processes the actions in them. OCR and
-              intelligent document processing, with Spring AI, LangChain and LangGraph.
-            </p>
-          </div>
-          <div className="panel span-all">
             <h3>Financial services</h3>
             <p className="muted">
               A bond offering platform for a U.S. mortgage finance client, a client services portal for corporate banking,
