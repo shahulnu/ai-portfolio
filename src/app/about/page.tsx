@@ -10,7 +10,7 @@ const CAREER = [
     years: "2020–now",
     role: "Solutions Architect",
     org: "Cognizant",
-    place: "Mississauga, Canada · Remote",
+    place: "Mississauga, ON, Canada",
     highlights:
       "Solutions architect for a U.S. health plan's member, provider, employer and broker portals, serving more than 2 million users. Led digital transformation and cloud migration to a platform of 400+ microservices on Azure, and designed and delivered an Azure OpenAI solution that reads employer group documents and processes the actions in them. Leads a 40-person team across India, Canada and the United States.",
   },
